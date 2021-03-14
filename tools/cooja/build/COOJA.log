@@ -1,195 +1,34 @@
-[16:10:29 - AWT-EventQueue-0] [Cooja.java:2856] [INFO] - External tools default settings: /external_tools_linux.config
-[16:10:29 - AWT-EventQueue-0] [Cooja.java:2886] [INFO] - External tools user settings: /home/user/.cooja.user.properties
-[16:10:55 - AWT-EventQueue-0] [Simulation.java:422] [INFO] - Simulation random seed: 123456
-[16:10:55 - AWT-EventQueue-0] [Visualizer.java:256] [INFO] - Registered external visualizer: org.contikios.cooja.plugins.skins.DGRMVisualizerSkin
-[16:11:18 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make example-neighbors.cooja TARGET=cooja 
-[16:11:29 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make clean TARGET=cooja 
-[16:11:30 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make example-neighbors.cooja TARGET=cooja 
-[16:11:40 - AWT-EventQueue-0] [ContikiMoteType.java:404] [INFO] - Creating core communicator between Java class Lib1 and Contiki library '/home/user/iot_contact_tracing/examples/rime/obj_cooja/mtype539.cooja'
-[16:11:41 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x11020 ( 324 == 0x144 bytes)
-[16:11:41 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x11180 ( 23432 == 0x5b88 bytes)
-[16:11:41 - AWT-EventQueue-0] [ContikiMoteType.java:500] [INFO] - mtype539.cooja: offsetting Cooja mote address space: 0x84206000
-[16:11:41 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x84217020 ( 324 == 0x144 bytes)
-[16:11:42 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x84217180 ( 23432 == 0x5b88 bytes)
-[16:11:53 - Thread-3] [Simulation.java:253] [INFO] - Simulation main loop started, system time: 1615734713915
-[16:11:58 - Thread-3] [Simulation.java:312] [INFO] - Simulation main loop stopped, system time: 1615734718745	Duration: 4830 ms	Simulated time 18648703 ms	Ratio 3861.0151138716355
-[16:28:25 - Thread-4] [Simulation.java:253] [INFO] - Simulation main loop started, system time: 1615735705525
-[16:28:29 - Thread-4] [Simulation.java:312] [INFO] - Simulation main loop stopped, system time: 1615735709238	Duration: 3713 ms	Simulated time 34538973 ms	Ratio 9302.17425262591
-[16:28:34 - AWT-EventQueue-0] [Simulation.java:422] [INFO] - Simulation random seed: 123456
-[16:28:47 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make mqtt-demo.cooja TARGET=cooja 
-[16:29:13 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make clean TARGET=cooja 
-[16:29:14 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make mqtt-demo.cooja TARGET=cooja 
-[16:29:25 - AWT-EventQueue-0] [ContikiMoteType.java:404] [INFO] - Creating core communicator between Java class Lib2 and Contiki library '/home/user/iot_contact_tracing/examples/mqtt-demo/obj_cooja/mtype907.cooja'
-[16:29:26 - AWT-EventQueue-0] [Cooja.java:2183] [FATAL] - Exception when creating mote type
-org.contikios.cooja.MoteType$MoteTypeCreationException: Error when creating corecomm instance: Lib2
-	at org.contikios.cooja.CoreComm.createCoreComm(CoreComm.java:346)
-	at org.contikios.cooja.contikimote.ContikiMoteType.doInit(ContikiMoteType.java:405)
-	at org.contikios.cooja.contikimote.ContikiMoteType.configureAndInit(ContikiMoteType.java:366)
-	at org.contikios.cooja.Cooja.doCreateMoteType(Cooja.java:2178)
-	at org.contikios.cooja.Cooja.doCreateMoteType(Cooja.java:2157)
-	at org.contikios.cooja.Cooja$GUIEventHandler.actionPerformed(Cooja.java:2938)
-	at javax.swing.AbstractButton.fireActionPerformed(AbstractButton.java:2022)
-	at javax.swing.AbstractButton$Handler.actionPerformed(AbstractButton.java:2348)
-	at javax.swing.DefaultButtonModel.fireActionPerformed(DefaultButtonModel.java:402)
-	at javax.swing.DefaultButtonModel.setPressed(DefaultButtonModel.java:259)
-	at javax.swing.AbstractButton.doClick(AbstractButton.java:376)
-	at javax.swing.plaf.basic.BasicMenuItemUI.doClick(BasicMenuItemUI.java:842)
-	at javax.swing.plaf.basic.BasicMenuItemUI$Handler.mouseReleased(BasicMenuItemUI.java:886)
-	at java.awt.Component.processMouseEvent(Component.java:6539)
-	at javax.swing.JComponent.processMouseEvent(JComponent.java:3324)
-	at java.awt.Component.processEvent(Component.java:6304)
-	at java.awt.Container.processEvent(Container.java:2239)
-	at java.awt.Component.dispatchEventImpl(Component.java:4889)
-	at java.awt.Container.dispatchEventImpl(Container.java:2297)
-	at java.awt.Component.dispatchEvent(Component.java:4711)
-	at java.awt.LightweightDispatcher.retargetMouseEvent(Container.java:4904)
-	at java.awt.LightweightDispatcher.processMouseEvent(Container.java:4535)
-	at java.awt.LightweightDispatcher.dispatchEvent(Container.java:4476)
-	at java.awt.Container.dispatchEventImpl(Container.java:2283)
-	at java.awt.Window.dispatchEventImpl(Window.java:2746)
-	at java.awt.Component.dispatchEvent(Component.java:4711)
-	at java.awt.EventQueue.dispatchEventImpl(EventQueue.java:760)
-	at java.awt.EventQueue.access$500(EventQueue.java:97)
-	at java.awt.EventQueue$3.run(EventQueue.java:709)
-	at java.awt.EventQueue$3.run(EventQueue.java:703)
-	at java.security.AccessController.doPrivileged(Native Method)
-	at java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:74)
-	at java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:84)
-	at java.awt.EventQueue$4.run(EventQueue.java:733)
-	at java.awt.EventQueue$4.run(EventQueue.java:731)
-	at java.security.AccessController.doPrivileged(Native Method)
-	at java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:74)
-	at java.awt.EventQueue.dispatchEvent(EventQueue.java:730)
-	at java.awt.EventDispatchThread.pumpOneEventForFilters(EventDispatchThread.java:205)
-	at java.awt.EventDispatchThread.pumpEventsForFilter(EventDispatchThread.java:116)
-	at java.awt.EventDispatchThread.pumpEventsForHierarchy(EventDispatchThread.java:105)
-	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:101)
-	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:93)
-	at java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
-Caused by: java.lang.reflect.InvocationTargetException
-	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
-	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
-	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
-	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
-	at org.contikios.cooja.CoreComm.createCoreComm(CoreComm.java:338)
-	... 43 more
-Caused by: java.lang.UnsatisfiedLinkError: /home/user/iot_contact_tracing/examples/mqtt-demo/obj_cooja/mtype907.cooja: /home/user/iot_contact_tracing/examples/mqtt-demo/obj_cooja/mtype907.cooja: undefined symbol: LOG_INFO
-	at java.lang.ClassLoader$NativeLibrary.load(Native Method)
-	at java.lang.ClassLoader.loadLibrary0(ClassLoader.java:1934)
-	at java.lang.ClassLoader.loadLibrary(ClassLoader.java:1817)
-	at java.lang.Runtime.load0(Runtime.java:810)
-	at java.lang.System.load(System.java:1088)
-	at org.contikios.cooja.corecomm.Lib2.<init>(Lib2.java:49)
-	... 48 more
-[16:33:18 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make clean TARGET=cooja 
-[16:33:19 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make mqtt-demo.cooja TARGET=cooja 
-[16:33:35 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make clean TARGET=cooja 
-[16:33:36 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make mqtt-demo.cooja TARGET=cooja 
-[16:34:29 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make clean TARGET=cooja 
-[16:34:29 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make mqtt-demo.cooja TARGET=cooja 
-[16:34:55 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make clean TARGET=cooja 
-[16:34:55 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make mqtt-demo.cooja TARGET=cooja 
-[16:35:16 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make clean TARGET=cooja 
-[16:35:17 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make mqtt-demo.cooja TARGET=cooja 
-[16:35:43 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make clean TARGET=cooja 
-[16:35:44 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make mqtt-demo.cooja TARGET=cooja 
-[16:35:57 - AWT-EventQueue-0] [ContikiMoteType.java:404] [INFO] - Creating core communicator between Java class Lib2 and Contiki library '/home/user/iot_contact_tracing/examples/mqtt-demo/obj_cooja/mtype811.cooja'
-[16:35:58 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x31020 ( 646 == 0x286 bytes)
-[16:35:59 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x312c0 ( 70056 == 0x111a8 bytes)
-[16:35:59 - AWT-EventQueue-0] [ContikiMoteType.java:500] [INFO] - mtype811.cooja: offsetting Cooja mote address space: 0x82f28000
-[16:35:59 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x82f59020 ( 646 == 0x286 bytes)
-[16:35:59 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x82f592c0 ( 70056 == 0x111a8 bytes)
-[16:36:36 - AWT-EventQueue-0] [Cooja.java:4140] [WARN] - Path is not portable: '/home/user/contiki-ng-mw-2021/examples/rpl-border-router/border-router.c
-[16:36:38 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make clean TARGET=cooja 
-[16:36:40 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make border-router.cooja TARGET=cooja 
-[16:36:51 - AWT-EventQueue-0] [ContikiMoteType.java:404] [INFO] - Creating core communicator between Java class Lib3 and Contiki library '/home/user/contiki-ng-mw-2021/examples/rpl-border-router/obj_cooja/mtype876.cooja'
-[16:36:53 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x30020 ( 820 == 0x334 bytes)
-[16:36:53 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x30360 ( 82432 == 0x14200 bytes)
-[16:36:53 - AWT-EventQueue-0] [ContikiMoteType.java:500] [INFO] - mtype876.cooja: offsetting Cooja mote address space: 0x82e41000
-[16:36:53 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x82e71020 ( 820 == 0x334 bytes)
-[16:36:53 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x82e71360 ( 82432 == 0x14200 bytes)
-[16:37:10 - AWT-EventQueue-0] [SerialSocketServer.java:389] [INFO] - Listening on port: 60001
-[16:38:14 - Thread-17] [Simulation.java:253] [INFO] - Simulation main loop started, system time: 1615736294317
-[16:38:54 - Thread-18] [SerialSocketServer.java:478] [INFO] - Forwarder: socket -> serial port
-[16:38:54 - Thread-16] [SerialSocketServer.java:425] [INFO] - Client connected: /127.0.0.1
-[16:40:18 - Thread-16] [SerialSocketServer.java:429] [INFO] - Listening thread shut down: Socket closed
-[16:40:18 - Thread-18] [SerialSocketServer.java:497] [INFO] - Socket closed
-[16:40:18 - Thread-18] [SerialSocketServer.java:501] [INFO] - End of Stream
-[16:40:23 - AWT-EventQueue-0] [SerialSocketServer.java:389] [INFO] - Listening on port: 60001
-[16:41:32 - Thread-19] [SerialSocketServer.java:429] [INFO] - Listening thread shut down: Socket closed
-[16:41:32 - Thread-17] [Simulation.java:312] [INFO] - Simulation main loop stopped, system time: 1615736492049	Duration: 197732 ms	Simulated time 196566 ms	Ratio 0.9941031294883984
-[16:41:33 - AWT-EventQueue-0] [Simulation.java:422] [INFO] - Simulation random seed: 123456
-[16:41:48 - AWT-EventQueue-0] [Cooja.java:4140] [WARN] - Path is not portable: '/home/user/contiki-ng-mw-2021/examples/rpl-border-router/border-router.c
-[16:41:52 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make clean TARGET=cooja 
-[16:42:19 - AWT-EventQueue-0] [Cooja.java:4140] [WARN] - Path is not portable: '/home/user/contiki-ng-mw-2021/examples/rpl-border-router/border-router.c
-[16:42:20 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make clean TARGET=cooja 
-[16:42:21 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make border-router.cooja TARGET=cooja 
-[16:42:44 - AWT-EventQueue-0] [ContikiMoteType.java:404] [INFO] - Creating core communicator between Java class Lib4 and Contiki library '/home/user/contiki-ng-mw-2021/examples/rpl-border-router/obj_cooja/mtype691.cooja'
-[16:42:46 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x30020 ( 820 == 0x334 bytes)
-[16:42:46 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x30360 ( 82432 == 0x14200 bytes)
-[16:42:46 - AWT-EventQueue-0] [ContikiMoteType.java:500] [INFO] - mtype691.cooja: offsetting Cooja mote address space: 0x82d5a000
-[16:42:46 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x82d8a020 ( 820 == 0x334 bytes)
-[16:42:46 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x82d8a360 ( 82432 == 0x14200 bytes)
-[16:42:59 - AWT-EventQueue-0] [SerialSocketServer.java:389] [INFO] - Listening on port: 60001
-[16:43:22 - AWT-EventQueue-0] [Cooja.java:4140] [WARN] - Path is not portable: '/home/user/contiki-ng-mw-2021/examples/mqtt-demo/mqtt-demo.c
-[16:43:29 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make clean TARGET=cooja 
-[16:43:29 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make mqtt-demo.cooja TARGET=cooja 
-[16:43:40 - AWT-EventQueue-0] [ContikiMoteType.java:404] [INFO] - Creating core communicator between Java class Lib5 and Contiki library '/home/user/contiki-ng-mw-2021/examples/mqtt-demo/obj_cooja/mtype760.cooja'
-[16:43:42 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x34020 ( 804 == 0x324 bytes)
-[16:43:42 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x34360 ( 83456 == 0x14600 bytes)
-[16:43:42 - AWT-EventQueue-0] [ContikiMoteType.java:500] [INFO] - mtype760.cooja: offsetting Cooja mote address space: 0x82c1e000
-[16:43:42 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x82c52020 ( 804 == 0x324 bytes)
-[16:43:42 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x82c52360 ( 83456 == 0x14600 bytes)
-[16:44:19 - Thread-28] [Simulation.java:253] [INFO] - Simulation main loop started, system time: 1615736659457
-[16:44:32 - Thread-24] [SerialSocketServer.java:425] [INFO] - Client connected: /127.0.0.1
-[16:44:32 - Thread-29] [SerialSocketServer.java:478] [INFO] - Forwarder: socket -> serial port
-[16:52:11 - Thread-28] [Simulation.java:312] [INFO] - Simulation main loop stopped, system time: 1615737131012	Duration: 471555 ms	Simulated time 469294 ms	Ratio 0.9952052252653455
-[17:02:28 - Thread-24] [SerialSocketServer.java:429] [INFO] - Listening thread shut down: Socket closed
-[17:02:28 - Thread-29] [SerialSocketServer.java:497] [INFO] - Socket closed
-[17:02:28 - Thread-29] [SerialSocketServer.java:501] [INFO] - End of Stream
-[17:02:30 - AWT-EventQueue-0] [Simulation.java:422] [INFO] - Simulation random seed: 123456
-[17:02:35 - Thread-30] [Simulation.java:253] [INFO] - Simulation main loop started, system time: 1615737755473
-[17:02:38 - Thread-30] [Simulation.java:312] [INFO] - Simulation main loop stopped, system time: 1615737758557	Duration: 3084 ms	Simulated time 10733180800 ms	Ratio 3479150.988654781
-[17:02:47 - AWT-EventQueue-0] [Simulation.java:422] [INFO] - Simulation random seed: 123456
-[17:03:09 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make clean TARGET=cooja 
-[17:03:10 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make mqtt-demo.cooja TARGET=cooja 
-[17:03:22 - AWT-EventQueue-0] [ContikiMoteType.java:404] [INFO] - Creating core communicator between Java class Lib6 and Contiki library '/home/user/iot_contact_tracing/examples/mqtt-demo/obj_cooja/mtype209.cooja'
-[17:03:23 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x32020 ( 646 == 0x286 bytes)
-[17:03:24 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x322c0 ( 70056 == 0x111a8 bytes)
-[17:03:24 - AWT-EventQueue-0] [ContikiMoteType.java:500] [INFO] - mtype209.cooja: offsetting Cooja mote address space: 0x82a89000
-[17:03:24 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x82abb020 ( 646 == 0x286 bytes)
-[17:03:24 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x82abb2c0 ( 70056 == 0x111a8 bytes)
-[17:04:00 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make border-router.cooja TARGET=cooja 
-[17:04:12 - AWT-EventQueue-0] [ContikiMoteType.java:404] [INFO] - Creating core communicator between Java class Lib7 and Contiki library '/home/user/iot_contact_tracing/examples/ipv6/rpl-border-router/obj_cooja/mtype821.cooja'
-[17:04:14 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x2d020 ( 678 == 0x2a6 bytes)
-[17:04:14 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x2d2e0 ( 69352 == 0x10ee8 bytes)
-[17:04:14 - AWT-EventQueue-0] [ContikiMoteType.java:500] [INFO] - mtype821.cooja: offsetting Cooja mote address space: 0x829a8000
-[17:04:14 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x829d5020 ( 678 == 0x2a6 bytes)
-[17:04:14 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x829d52e0 ( 69352 == 0x10ee8 bytes)
-[17:04:22 - Thread-38] [Simulation.java:253] [INFO] - Simulation main loop started, system time: 1615737862080
-[17:04:23 - Thread-38] [Simulation.java:312] [INFO] - Simulation main loop stopped, system time: 1615737863827	Duration: 1747 ms	Simulated time 575536 ms	Ratio 329.44247281053237
-[17:04:27 - Thread-39] [Simulation.java:422] [INFO] - Simulation random seed: 123456
-[17:04:29 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make mqtt-demo.cooja TARGET=cooja 
-[17:04:31 - Thread-39] [ContikiMoteType.java:404] [INFO] - Creating core communicator between Java class Lib8 and Contiki library '/home/user/iot_contact_tracing/examples/mqtt-demo/obj_cooja/mtype856.cooja'
-[17:04:33 - Thread-39] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x32020 ( 646 == 0x286 bytes)
-[17:04:33 - Thread-39] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x322c0 ( 70056 == 0x111a8 bytes)
-[17:04:33 - Thread-39] [ContikiMoteType.java:500] [INFO] - mtype856.cooja: offsetting Cooja mote address space: 0x82871000
-[17:04:33 - Thread-39] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x828a3020 ( 646 == 0x286 bytes)
-[17:04:33 - Thread-39] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x828a32c0 ( 70056 == 0x111a8 bytes)
-[17:04:35 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make border-router.cooja TARGET=cooja 
-[17:04:37 - Thread-39] [ContikiMoteType.java:404] [INFO] - Creating core communicator between Java class Lib9 and Contiki library '/home/user/iot_contact_tracing/examples/ipv6/rpl-border-router/obj_cooja/mtype283.cooja'
-[17:04:39 - Thread-39] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x2d020 ( 678 == 0x2a6 bytes)
-[17:04:40 - Thread-39] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x2d2e0 ( 69352 == 0x10ee8 bytes)
-[17:04:40 - Thread-39] [ContikiMoteType.java:500] [INFO] - mtype283.cooja: offsetting Cooja mote address space: 0x82790000
-[17:04:40 - Thread-39] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x827bd020 ( 678 == 0x2a6 bytes)
-[17:04:40 - Thread-39] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x827bd2e0 ( 69352 == 0x10ee8 bytes)
-[17:04:40 - Thread-39] [ContikiRadio.java:397] [INFO] - Radio bitrate reconfigured to (kbps): 250.0
-[17:04:40 - Thread-39] [ContikiRadio.java:397] [INFO] - Radio bitrate reconfigured to (kbps): 250.0
-[17:04:40 - Thread-39] [ContikiRadio.java:397] [INFO] - Radio bitrate reconfigured to (kbps): 250.0
-[17:04:40 - Thread-39] [TimeLine.java:567] [INFO] - Zoom level: 500.0 microseconds/pixel 
-[17:04:52 - Thread-46] [Simulation.java:253] [INFO] - Simulation main loop started, system time: 1615737892381
-[17:05:13 - AWT-EventQueue-0] [SerialSocketServer.java:389] [INFO] - Listening on port: 60001
-[17:06:07 - Thread-48] [SerialSocketServer.java:425] [INFO] - Client connected: /127.0.0.1
-[17:06:07 - Thread-49] [SerialSocketServer.java:478] [INFO] - Forwarder: socket -> serial port
-[17:08:38 - Thread-46] [Simulation.java:312] [INFO] - Simulation main loop stopped, system time: 1615738118243	Duration: 225862 ms	Simulated time 223858 ms	Ratio 0.9911273255350612
-[17:09:27 - Thread-49] [SerialSocketServer.java:501] [INFO] - End of Stream
+[20:53:47 - AWT-EventQueue-0] [Cooja.java:2856] [INFO] - External tools default settings: /external_tools_linux.config
+[20:53:47 - AWT-EventQueue-0] [Cooja.java:2886] [INFO] - External tools user settings: /home/user/.cooja.user.properties
+[20:53:54 - AWT-EventQueue-0] [Simulation.java:422] [INFO] - Simulation random seed: 123456
+[20:53:54 - AWT-EventQueue-0] [Visualizer.java:256] [INFO] - Registered external visualizer: org.contikios.cooja.plugins.skins.DGRMVisualizerSkin
+[20:54:13 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make border-router.cooja TARGET=cooja 
+[20:54:16 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make clean TARGET=cooja 
+[20:54:16 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make border-router.cooja TARGET=cooja 
+[20:54:30 - AWT-EventQueue-0] [ContikiMoteType.java:404] [INFO] - Creating core communicator between Java class Lib1 and Contiki library '/home/user/iot_contact_tracing/examples/ipv6/rpl-border-router/obj_cooja/mtype961.cooja'
+[20:54:31 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x2d020 ( 678 == 0x2a6 bytes)
+[20:54:32 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x2d2e0 ( 69352 == 0x10ee8 bytes)
+[20:54:32 - AWT-EventQueue-0] [ContikiMoteType.java:500] [INFO] - mtype961.cooja: offsetting Cooja mote address space: 0x8331f000
+[20:54:32 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x8334c020 ( 678 == 0x2a6 bytes)
+[20:54:32 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x8334c2e0 ( 69352 == 0x10ee8 bytes)
+[20:54:41 - AWT-EventQueue-0] [SerialSocketServer.java:389] [INFO] - Listening on port: 60001
+[20:54:47 - Thread-5] [Simulation.java:253] [INFO] - Simulation main loop started, system time: 1615751687950
+[20:55:48 - Thread-6] [SerialSocketServer.java:478] [INFO] - Forwarder: socket -> serial port
+[20:55:48 - Thread-4] [SerialSocketServer.java:425] [INFO] - Client connected: /127.0.0.1
+[20:56:01 - Thread-4] [SerialSocketServer.java:429] [INFO] - Listening thread shut down: Socket closed
+[20:56:01 - Thread-6] [SerialSocketServer.java:497] [INFO] - Socket closed
+[20:56:01 - Thread-6] [SerialSocketServer.java:501] [INFO] - End of Stream
+[20:56:08 - Thread-5] [Simulation.java:312] [INFO] - Simulation main loop stopped, system time: 1615751768760	Duration: 80810 ms	Simulated time 80557 ms	Ratio 0.9968691993565153
+[20:56:11 - AWT-EventQueue-0] [Simulation.java:422] [INFO] - Simulation random seed: 123456
+[20:56:39 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make clean TARGET=cooja 
+[20:56:39 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make border-router.cooja TARGET=cooja 
+[20:56:56 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make clean TARGET=cooja 
+[20:56:57 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make node.cooja TARGET=cooja 
+[20:57:12 - AWT-EventQueue-0] [ContikiMoteType.java:404] [INFO] - Creating core communicator between Java class Lib2 and Contiki library '/home/user/iot_contact_tracing/examples/ipv6/rpl-tsch/obj_cooja/mtype356.cooja'
+[20:57:13 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x36020 ( 644 == 0x284 bytes)
+[20:57:14 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x362c0 ( 87144 == 0x15468 bytes)
+[20:57:14 - AWT-EventQueue-0] [ContikiMoteType.java:500] [INFO] - mtype356.cooja: offsetting Cooja mote address space: 0x83131000
+[20:57:14 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x83167020 ( 644 == 0x284 bytes)
+[20:57:14 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x831672c0 ( 87144 == 0x15468 bytes)
+[20:57:20 - AWT-EventQueue-0] [SerialSocketServer.java:389] [INFO] - Listening on port: 60001
+[20:57:53 - Thread-12] [Simulation.java:253] [INFO] - Simulation main loop started, system time: 1615751873836
