@@ -1,0 +1,5 @@
+*.cooja
+*.o
+*.a
+*.map
+*.log
