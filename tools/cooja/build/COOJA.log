@@ -1,13 +1,15 @@
-[15:46:58 - AWT-EventQueue-0] [Cooja.java:2856] [INFO] - External tools default settings: /external_tools_linux.config
-[15:46:58 - AWT-EventQueue-0] [Cooja.java:2886] [INFO] - External tools user settings: /home/user/.cooja.user.properties
-[15:47:06 - AWT-EventQueue-0] [Simulation.java:422] [INFO] - Simulation random seed: 123456
-[15:47:06 - AWT-EventQueue-0] [Visualizer.java:256] [INFO] - Registered external visualizer: org.contikios.cooja.plugins.skins.DGRMVisualizerSkin
-[15:47:35 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make example-neighbors.cooja TARGET=cooja 
-[15:47:49 - AWT-EventQueue-0] [ContikiMoteType.java:404] [INFO] - Creating core communicator between Java class Lib1 and Contiki library '/home/user/iot_contact_tracing/examples/rime/obj_cooja/mtype6.cooja'
-[15:47:51 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x11020 ( 324 == 0x144 bytes)
-[15:47:51 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x11180 ( 23432 == 0x5b88 bytes)
-[15:47:51 - AWT-EventQueue-0] [ContikiMoteType.java:500] [INFO] - mtype6.cooja: offsetting Cooja mote address space: 0x84311000
-[15:47:51 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x84322020 ( 324 == 0x144 bytes)
-[15:47:51 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x84322180 ( 23432 == 0x5b88 bytes)
-[15:47:56 - Thread-3] [Simulation.java:253] [INFO] - Simulation main loop started, system time: 1615733276934
-[15:48:32 - Thread-3] [Simulation.java:312] [INFO] - Simulation main loop stopped, system time: 1615733312662	Duration: 35728 ms	Simulated time 581773115 ms	Ratio 16283.394396551725
+[16:05:33 - AWT-EventQueue-0] [Cooja.java:2856] [INFO] - External tools default settings: /external_tools_linux.config
+[16:05:33 - AWT-EventQueue-0] [Cooja.java:2886] [INFO] - External tools user settings: /home/user/.cooja.user.properties
+[16:05:42 - AWT-EventQueue-0] [Simulation.java:422] [INFO] - Simulation random seed: 123456
+[16:05:43 - AWT-EventQueue-0] [Visualizer.java:256] [INFO] - Registered external visualizer: org.contikios.cooja.plugins.skins.DGRMVisualizerSkin
+[16:06:05 - AWT-EventQueue-0] [CompileContiki.java:140] [INFO] - > make example-neighbors.cooja TARGET=cooja 
+[16:06:07 - AWT-EventQueue-0] [ContikiMoteType.java:404] [INFO] - Creating core communicator between Java class Lib1 and Contiki library '/home/user/iot_contact_tracing/examples/rime/obj_cooja/mtype388.cooja'
+[16:06:09 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x11020 ( 324 == 0x144 bytes)
+[16:06:09 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x11180 ( 23432 == 0x5b88 bytes)
+[16:06:09 - AWT-EventQueue-0] [ContikiMoteType.java:500] [INFO] - mtype388.cooja: offsetting Cooja mote address space: 0x84130000
+[16:06:09 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x84141020 ( 324 == 0x144 bytes)
+[16:06:09 - AWT-EventQueue-0] [ContikiMoteType.java:573] [INFO] - Parsed section at 0x84141180 ( 23432 == 0x5b88 bytes)
+[16:06:24 - Thread-3] [Simulation.java:253] [INFO] - Simulation main loop started, system time: 1615734384276
+[16:06:26 - Thread-3] [Simulation.java:312] [INFO] - Simulation main loop stopped, system time: 1615734386179	Duration: 1903 ms	Simulated time 4961778 ms	Ratio 2605.9758403361343
+[16:06:31 - Thread-4] [Simulation.java:253] [INFO] - Simulation main loop started, system time: 1615734391115
+[16:06:33 - Thread-4] [Simulation.java:312] [INFO] - Simulation main loop stopped, system time: 1615734393400	Duration: 2285 ms	Simulated time 14555998 ms	Ratio 6370.239824945295
