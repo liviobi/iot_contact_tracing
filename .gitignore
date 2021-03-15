@@ -1,8 +1,10 @@
 *.cooja
 *.o
+*.d
 *.a
 *.map
 *.log
+*.jar
 examples/ipv6/rpl-border-router/obj_cooja/
 examples/ipv6/rpl-tsch-copy/
 examples/mqtt-demo/obj_cooja/
