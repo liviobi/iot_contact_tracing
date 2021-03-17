@@ -1,5 +1,3 @@
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "EndlessLoop"
 /*
  * Copyright (c) 2010, Swedish Institute of Computer Science.
  * All rights reserved.
@@ -221,5 +219,3 @@ PROCESS_THREAD(broadcast_process, ev, data)
 
   PROCESS_END();
 }
-
-#pragma clang diagnostic pop
