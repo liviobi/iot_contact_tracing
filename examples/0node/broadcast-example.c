@@ -36,6 +36,7 @@
 #include "sys/etimer.h"
 #include "net/ip/uip.h"
 #include "net/ipv6/uip-ds6.h"
+#include <sys/node-id.h>
 
 #include "simple-udp.h"
 
@@ -65,6 +66,8 @@ receiver(struct simple_udp_connection *c,
 {
   printf("Data received on port %d from port %d with length %d\n",
          receiver_port, sender_port, datalen);
+  char*sender_id = (char*)data;
+  printf("Sent by: %s\n", sender_id);
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(broadcast_example_process, ev, data)
@@ -72,9 +75,12 @@ PROCESS_THREAD(broadcast_example_process, ev, data)
   static struct etimer periodic_timer;
   static struct etimer send_timer;
   uip_ipaddr_t addr;
+  static char str[3];
+ 
 
   PROCESS_BEGIN();
-
+  snprintf(str, 3, "%d", node_id);
+  
   simple_udp_register(&broadcast_connection, UDP_PORT,
                       NULL, UDP_PORT,
                       receiver);
@@ -86,9 +92,9 @@ PROCESS_THREAD(broadcast_example_process, ev, data)
     etimer_set(&send_timer, SEND_TIME);
 
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&send_timer));
-    printf("Sending broadcast\n");
+    printf("Sending broadcast from %s\n",str);
     uip_create_linklocal_allnodes_mcast(&addr);
-    simple_udp_sendto(&broadcast_connection, "Test", 4, &addr);
+    simple_udp_sendto(&broadcast_connection, str, 3, &addr);
   }
 
   PROCESS_END();
