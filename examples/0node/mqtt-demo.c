@@ -406,7 +406,7 @@ static void publish(void)
 {
     //check if there's something to publish, TODO remove when adding event
     if(!neighbours_to_publish()){
-        LOG_INFO("no new neb to pub\n");
+        LOG_INFO("No new neighbours to publish\n");
         return;
     }
 
@@ -433,10 +433,14 @@ static void publish(void)
   //??
   buf_ptr += len;
 
-  for(int i = 0; i < MAX_NEIGHBOURS_SAVED && neighbours[i] != NULL; i++){
+  for(int i = 0, bool firstArrayElemet = true; i < MAX_NEIGHBOURS_SAVED && neighbours[i] != NULL; i++){
         if(neighbours[i]->saved == false){
-            //TODO  fix
-            len = snprintf(buf_ptr, remaining,"%d,",neighbours[i]->id);
+            if(firstArrayElemet){
+                len = snprintf(buf_ptr, remaining,"%d",neighbours[i]->id);
+                firstArrayElemet = false;
+            }else{
+                len = snprintf(buf_ptr, remaining,",%d",neighbours[i]->id);
+            }
             remaining -= len;
             //??
             buf_ptr += len;
