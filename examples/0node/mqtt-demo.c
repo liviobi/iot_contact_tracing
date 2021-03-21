@@ -432,8 +432,10 @@ static void publish(void)
   remaining -= len;
   //??
   buf_ptr += len;
-
-  for(int i = 0, bool firstArrayElemet = true; i < MAX_NEIGHBOURS_SAVED && neighbours[i] != NULL; i++){
+	
+	//just because it can't be declared inside the for loop
+	bool firstArrayElemet = true;
+  for(int i = 0; i < MAX_NEIGHBOURS_SAVED && neighbours[i] != NULL; i++){
         if(neighbours[i]->saved == false){
             if(firstArrayElemet){
                 len = snprintf(buf_ptr, remaining,"%d",neighbours[i]->id);
@@ -673,7 +675,7 @@ receiver(struct simple_udp_connection *c,
 				//TODO log error
 				printf("malloc failed\n");
 			}else{
-				printf("created new neigh with id: %d\n", sender_id);
+				printf("Added new neighbour with id: %d\n", sender_id);
 			}
 			break;
 		}else{
