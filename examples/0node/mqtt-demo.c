@@ -388,7 +388,7 @@ get_onboard_temp(void)
 static bool neighbours_to_publish(){
     //check if there are new neighbours to publish to the backend
     int i;
-    for(i = 0; i < MAX_NEIGHBOURS_SAVED || neighbours[i] == NULL; i++ ){
+    for(i = 0; i < MAX_NEIGHBOURS_SAVED && neighbours[i] != NULL; i++ ){
         if(neighbours[i]->saved == false){
             break;
         }
@@ -411,6 +411,7 @@ static void publish(void)
     }
 
   int len;
+	//TODO CHECK BUFFER SIZE
   int remaining = APP_BUFFER_SIZE;
 
   seq_nr_value++;
@@ -432,30 +433,29 @@ static void publish(void)
   //??
   buf_ptr += len;
 
-  for(int i = 0; i < MAX_NEIGHBOURS_SAVED && neighbours[i] == NULL && (remaining >  80 || len > 0) ; i++){
+  for(int i = 0; i < MAX_NEIGHBOURS_SAVED && neighbours[i] != NULL; i++){
         if(neighbours[i]->saved == false){
             //TODO  fix
             len = snprintf(buf_ptr, remaining,"%d,",neighbours[i]->id);
             remaining -= len;
             //??
             buf_ptr += len;
-            neighbours[i]->saved == true;
+            neighbours[i]->saved = true;
         }
   }
 
-
-
-  len = snprintf(buf_ptr, remaining,"]");
+	len = snprintf(buf_ptr, remaining,"]}");
 
   if(len < 0 || len >= remaining) {
     LOG_ERR("Buffer too short. Have %d, need %d + \\0\n", remaining, len);
     return;
   }
-  remaining -= len;
+  
+	/*remaining -= len;
   buf_ptr += len;
 
-  /* Put our Default route's string representation in a buffer */
-  char def_rt_str[64];
+  // Put our Default route's string representation in a buffer
+ 	char def_rt_str[64];
   memset(def_rt_str, 0, sizeof(def_rt_str));
   ipaddr_sprintf(def_rt_str, sizeof(def_rt_str), uip_ds6_defrt_choose());
 
@@ -474,7 +474,7 @@ static void publish(void)
   if(len < 0 || len >= remaining) {
     LOG_ERR("Buffer too short. Have %d, need %d + \\0\n", remaining, len);
     return;
-  }
+  }*/
 
   mqtt_publish(&conn, NULL, pub_topic, (uint8_t *)app_buffer,
                strlen(app_buffer), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
