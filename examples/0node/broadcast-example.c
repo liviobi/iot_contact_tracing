@@ -19,7 +19,7 @@
 #define SEND_INTERVAL		(20 * CLOCK_SECOND)
 #define SEND_TIME		(random_rand() % (SEND_INTERVAL))
 
-#define MAX_NEIGHBOURS_SAVED 2
+#define MAX_NEIGHBOURS_SAVED 16
 
 typedef struct neighbour_s{
 	int id;
@@ -85,6 +85,7 @@ receiver(struct simple_udp_connection *c,
 	}
 	//array of neighbours is full
 	if(i == MAX_NEIGHBOURS_SAVED){
+		//TODO delete last seen neighbour
 		printf("can't add neighbour: %d array is full\n", sender_id);
 	}
 }

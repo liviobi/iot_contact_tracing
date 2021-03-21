@@ -1,32 +1,3 @@
-/*
- * Copyright (c) 2014, Texas Instruments Incorporated - http://www.ti.com/
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the copyright holder nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE
- * COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
- * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
- * OF THE POSSIBILITY OF SUCH DAMAGE.
- */
 /*---------------------------------------------------------------------------*/
 /** \addtogroup cc2538-examples
  * @{
@@ -66,14 +37,26 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <sys/node-id.h>
 
 
 #define UDP_PORT 1234
 
 #define SEND_INTERVAL		(20 * CLOCK_SECOND)
 #define SEND_TIME		(random_rand() % (SEND_INTERVAL))
+#define MAX_NEIGHBOURS_SAVED 16
 
 static struct simple_udp_connection broadcast_connection;
+
+typedef struct neighbour_s{
+	int id;
+	bool saved;
+} neighbour;
+
+//Array to save the neighbours encountered, initialized to NULL
+static neighbour* neighbours[MAX_NEIGHBOURS_SAVED] = {NULL};
 
 /*---------------------------------------------------------------------------*/
 /*
@@ -503,7 +486,7 @@ state_machine(void)
     leds_on(MQTT_DEMO_STATUS_LED);
     ctimer_set(&ct, CONNECTING_LED_DURATION, publish_led_off, NULL);
     /* Not connected yet. Wait */
-    LOG_INFO("Connecting: retry %u...\n", connect_attempt);
+    //LOG_INFO("Connecting: retry %u...\n", connect_attempt);
     break;
   case STATE_CONNECTED:
   case STATE_PUBLISHING:
@@ -614,6 +597,15 @@ PROCESS_THREAD(mqtt_demo_process, ev, data)
   PROCESS_END();
 }
 /*---------------------------------------------------------------------------*/
+static  neighbour* create_neighbour(int sender_id){
+	neighbour* new_neighbour = (neighbour*)malloc(sizeof(neighbour));
+	//initialize the new neighbour
+	new_neighbour-> id = sender_id;
+	new_neighbour-> saved = false;
+
+	return  new_neighbour;
+}
+/*---------------------------------------------------------------------------*/
 static void
 receiver(struct simple_udp_connection *c,
          const uip_ipaddr_t *sender_addr,
@@ -623,8 +615,34 @@ receiver(struct simple_udp_connection *c,
          const uint8_t *data,
          uint16_t datalen)
 {
-  printf("Data received on port %d from port %d with length %d\n",
-         receiver_port, sender_port, datalen);
+  int sender_id = atoi((char*)data);
+  printf("Data received on port %d from port %d sent by %d\n",
+         receiver_port, sender_port, sender_id);
+	int i;
+	for(i = 0; i < MAX_NEIGHBOURS_SAVED; i++){
+		if(neighbours[i] == NULL){
+			neighbours[i] = create_neighbour(sender_id);
+			//check if malloc failed
+			if(neighbours[i] == NULL){
+				//TODO log error
+				printf("malloc failed\n");
+			}else{
+				printf("created new neigh with id: %d\n", sender_id);
+			}
+			break;
+		}else{
+			//neighbour already seen
+			if(neighbours[i]->id == sender_id){
+				printf("already seen neighbour: %d\n", sender_id);
+				break;
+			}
+		}
+	}
+	//array of neighbours is full
+	if(i == MAX_NEIGHBOURS_SAVED){
+		//TODO delete last seen neighbour
+		printf("can't add neighbour: %d array is full\n", sender_id);
+	}
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(broadcast_example_process, ev, data)
@@ -632,9 +650,13 @@ PROCESS_THREAD(broadcast_example_process, ev, data)
   static struct etimer periodic_timer;
   static struct etimer send_timer;
   uip_ipaddr_t addr;
+  static char node_id_str[3];
+ 
 
   PROCESS_BEGIN();
-
+  //convert node id from int to string in order to send it 
+  snprintf(node_id_str, 3, "%d", node_id);
+  
   simple_udp_register(&broadcast_connection, UDP_PORT,
                       NULL, UDP_PORT,
                       receiver);
@@ -646,9 +668,9 @@ PROCESS_THREAD(broadcast_example_process, ev, data)
     etimer_set(&send_timer, SEND_TIME);
 
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&send_timer));
-    printf("Sending broadcast\n");
+    printf("Sending broadcast from %s\n",node_id_str);
     uip_create_linklocal_allnodes_mcast(&addr);
-    simple_udp_sendto(&broadcast_connection, "Test", 4, &addr);
+    simple_udp_sendto(&broadcast_connection, node_id_str, 3, &addr);
   }
 
   PROCESS_END();
