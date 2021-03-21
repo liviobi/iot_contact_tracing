@@ -385,31 +385,72 @@ get_onboard_temp(void)
   return NATIVE_TEMPERATURE;
 }
 /*---------------------------------------------------------------------------*/
-static void
-publish(void)
+static bool neighbours_to_publish(){
+    //check if there are new neighbours to publish to the backend
+    int i;
+    for(i = 0; i < MAX_NEIGHBOURS_SAVED || neighbours[i] == NULL; i++ ){
+        if(neighbours[i]->saved == false){
+            break;
+        }
+    }
+    //no new neighbours in the array
+    if (i == MAX_NEIGHBOURS_SAVED || neighbours[i] == NULL){
+        return false;
+    }
+    //there is a new neighbour to add
+    return true;
+
+}
+/*---------------------------------------------------------------------------*/
+static void publish(void)
 {
-  /* Publish MQTT topic */
+    //check if there's something to publish, TODO remove when adding event
+    if(!neighbours_to_publish()){
+        LOG_INFO("no new neb to pub\n");
+        return;
+    }
+
   int len;
   int remaining = APP_BUFFER_SIZE;
 
   seq_nr_value++;
-
   buf_ptr = app_buffer;
 
   len = snprintf(buf_ptr, remaining,
-                 "{"
-                 "\"d\":{"
-                 "\"myName\":\"%s\","
-                 "\"Seq #\":%d,"
-                 "\"Uptime (sec)\":%lu,"
-                 "\"Temp (C)\":%d",
-                 "native", seq_nr_value,clock_seconds(),get_onboard_temp()); 
+                   "{"
+                   "\"id\": %d,"
+                   "\"Seq #\":%d,"
+                   "\"Uptime (sec)\":%lu,"
+                   "\"neighbours\": [",
+                   node_id, seq_nr_value,clock_seconds());
+
+  if(len < 0 || len >= remaining) {
+      LOG_ERR("Buffer too short. Have %d, need %d + \\0\n", remaining, len);
+      return;
+  }
+  remaining -= len;
+  //??
+  buf_ptr += len;
+
+  for(int i = 0; i < MAX_NEIGHBOURS_SAVED && neighbours[i] == NULL && (remaining >  80 || len > 0) ; i++){
+        if(neighbours[i]->saved == false){
+            //TODO  fix
+            len = snprintf(buf_ptr, remaining,"%d,",neighbours[i]->id);
+            remaining -= len;
+            //??
+            buf_ptr += len;
+            neighbours[i]->saved == true;
+        }
+  }
+
+
+
+  len = snprintf(buf_ptr, remaining,"]");
 
   if(len < 0 || len >= remaining) {
     LOG_ERR("Buffer too short. Have %d, need %d + \\0\n", remaining, len);
     return;
   }
-
   remaining -= len;
   buf_ptr += len;
 
@@ -428,7 +469,7 @@ publish(void)
   remaining -= len;
   buf_ptr += len;
 
-  len = snprintf(buf_ptr, remaining, "}}");
+  len = snprintf(buf_ptr, remaining, "}");
 
   if(len < 0 || len >= remaining) {
     LOG_ERR("Buffer too short. Have %d, need %d + \\0\n", remaining, len);
@@ -507,6 +548,7 @@ state_machine(void)
       } else {
         leds_on(MQTT_DEMO_STATUS_LED);
         ctimer_set(&ct, PUBLISH_LED_ON_DURATION, publish_led_off, NULL);
+        //TODO wait for new neighbour added instead of publishing periodically
         publish();
       }
       etimer_set(&publish_periodic_timer, conf.pub_interval);
@@ -587,7 +629,7 @@ PROCESS_THREAD(mqtt_demo_process, ev, data)
   while(1) {
 
     PROCESS_YIELD();
-
+    //if a timer elapses and that timer is publish periodic timer, switch state in the machine
     if (ev == PROCESS_EVENT_TIMER && data == &publish_periodic_timer) {
       state_machine();
     }
