@@ -1,35 +1,3 @@
-/*
- * Copyright (c) 2011, Swedish Institute of Computer Science.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the Institute nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE INSTITUTE AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE INSTITUTE OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- *
- * This file is part of the Contiki operating system.
- *
- */
-
 #include "contiki.h"
 #include "lib/random.h"
 #include "sys/ctimer.h"
@@ -43,17 +11,45 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
+#include <stdlib.h>
 
 #define UDP_PORT 1234
 
 #define SEND_INTERVAL		(20 * CLOCK_SECOND)
 #define SEND_TIME		(random_rand() % (SEND_INTERVAL))
 
+#define MAX_NEIGHBOURS_SAVED 2
+
+typedef struct neighbour_s{
+	int id;
+	bool saved;
+} neighbour;
+
 static struct simple_udp_connection broadcast_connection;
+//Array to save the neighbours encountered, initialized to NULL
+static neighbour* neighbours[MAX_NEIGHBOURS_SAVED] = {NULL};
 
 /*---------------------------------------------------------------------------*/
 PROCESS(broadcast_example_process, "UDP broadcast example process");
 AUTOSTART_PROCESSES(&broadcast_example_process);
+/*---------------------------------------------------------------------------*/
+static void neighbours_print(){
+	for(int i = 0 ; i < MAX_NEIGHBOURS_SAVED; i++){
+		if(neighbours[i] == NULL){
+			printf("%d\n",i);
+		}
+	}
+}
+/*---------------------------------------------------------------------------*/
+static  neighbour* create_neighbour(int sender_id){
+	neighbour* new_neighbour = (neighbour*)malloc(sizeof(neighbour));
+	//initialize the new neighbour
+	new_neighbour-> id = sender_id;
+	new_neighbour-> saved = false;
+
+	return  new_neighbour;
+}
 /*---------------------------------------------------------------------------*/
 static void
 receiver(struct simple_udp_connection *c,
@@ -64,10 +60,33 @@ receiver(struct simple_udp_connection *c,
          const uint8_t *data,
          uint16_t datalen)
 {
-  printf("Data received on port %d from port %d with length %d\n",
-         receiver_port, sender_port, datalen);
-  char*sender_id = (char*)data;
-  printf("Sent by: %s\n", sender_id);
+  int sender_id = atoi((char*)data);
+  printf("Data received on port %d from port %d sent by %d\n",
+         receiver_port, sender_port, sender_id);
+	int i;
+	for(i = 0; i < MAX_NEIGHBOURS_SAVED; i++){
+		if(neighbours[i] == NULL){
+			neighbours[i] = create_neighbour(sender_id);
+			//check if malloc failed
+			if(neighbours[i] == NULL){
+				//TODO log error
+				printf("malloc failed\n");
+			}else{
+				printf("created new neigh with id: %d\n", sender_id);
+			}
+			break;
+		}else{
+			//neighbour already seen
+			if(neighbours[i]->id == sender_id){
+				printf("already seen neighbour: %d\n", sender_id);
+				break;
+			}
+		}
+	}
+	//array of neighbours is full
+	if(i == MAX_NEIGHBOURS_SAVED){
+		printf("can't add neighbour: %d array is full\n", sender_id);
+	}
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(broadcast_example_process, ev, data)
@@ -75,11 +94,13 @@ PROCESS_THREAD(broadcast_example_process, ev, data)
   static struct etimer periodic_timer;
   static struct etimer send_timer;
   uip_ipaddr_t addr;
-  static char str[3];
+  static char node_id_str[3];
  
 
   PROCESS_BEGIN();
-  snprintf(str, 3, "%d", node_id);
+  neighbours_print();
+  //convert node id from int to string in order to send it 
+  snprintf(node_id_str, 3, "%d", node_id);
   
   simple_udp_register(&broadcast_connection, UDP_PORT,
                       NULL, UDP_PORT,
@@ -92,9 +113,9 @@ PROCESS_THREAD(broadcast_example_process, ev, data)
     etimer_set(&send_timer, SEND_TIME);
 
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&send_timer));
-    printf("Sending broadcast from %s\n",str);
+    printf("Sending broadcast from %s\n",node_id_str);
     uip_create_linklocal_allnodes_mcast(&addr);
-    simple_udp_sendto(&broadcast_connection, str, 3, &addr);
+    simple_udp_sendto(&broadcast_connection, node_id_str, 3, &addr);
   }
 
   PROCESS_END();
