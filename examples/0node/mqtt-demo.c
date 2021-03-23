@@ -47,22 +47,23 @@
 #define SEND_INTERVAL		(20 * CLOCK_SECOND)
 #define SEND_TIME		(random_rand() % (SEND_INTERVAL))
 #define MAX_NEIGHBOURS_SAVED 16
-#define MAX_RAND_EVENT_TIME 10
+#define MAX_EVENT_OF_INTEREST_DELAY 80
+#define MIN_EVENT_OF_INTEREST_DELAY 20
 
 static struct simple_udp_connection broadcast_connection;
 
 //event that gets posted when there's something to publish
-static process_event_t publish_trigger_event;
+static process_event_t event_of_interest_event;
+static process_event_t neighbour_added_event;
 
 /*
-When either a random event of interest or a new neighbour has been discovered, 
+When a random event of interest occurs,
 an event gets fired. When that happens, it may occur that the finite state machine
 that implements the mqtt functionalities isn't anymore in the publishing state, 
-therefore the following variables are used to flag  that there's something to publish, 
+therefore the following variable is used to flag  that there's something to publish,
 so when the machine will go back to the publishing state, the update won't be missed
 */
 static bool event_fired;
-static bool new_neighbour_added;
 
 typedef struct neighbour_s{
 	int id;
@@ -424,6 +425,10 @@ static void publish(void)
         //LOG_INFO("No new neighbours to publish\n");
         return;
     }
+    if(event_fired){
+        printf("EVENT OF INTEREST IN PUBLISH\n");
+        event_fired = false;
+    }
 
   int len;
 	//TODO CHECK BUFFER SIZE
@@ -653,8 +658,8 @@ PROCESS_THREAD(mqtt_demo_process, ev, data)
     //if a timer elapses and that timer is publish periodic timer, switch state in the machine
     if (ev == PROCESS_EVENT_TIMER && data == &publish_periodic_timer) {
         state_machine();
-    }else if(ev == publish_trigger_event && state == STATE_PUBLISHING){
-        printf("IN STATE PUBLISHING");
+    }else if((/*ev == event_of_interest_event || */ev == neighbour_added_event) && state == STATE_PUBLISHING){
+        printf("IN STATE PUBLISHING\n");
         state_machine();
     }
 
@@ -685,6 +690,7 @@ receiver(struct simple_udp_connection *c,
   printf("Data received on port %d from port %d sent by %d\n",
          receiver_port, sender_port, sender_id);
 	int i;
+	bool neighbour_added = false;
 	for(i = 0; i < MAX_NEIGHBOURS_SAVED; i++){
 		if(neighbours[i] == NULL){
 			neighbours[i] = create_neighbour(sender_id);
@@ -694,6 +700,7 @@ receiver(struct simple_udp_connection *c,
 				printf("malloc failed\n");
 			}else{
 				printf("Added new neighbour with id: %d\n", sender_id);
+                neighbour_added = true;
 			}
 			break;
 		}else{
@@ -709,6 +716,10 @@ receiver(struct simple_udp_connection *c,
 		//TODO delete last seen neighbour
 		printf("can't add neighbour: %d array is full\n", sender_id);
 	}
+
+	if(neighbour_added){
+        process_post(&mqtt_demo_process,neighbour_added_event, NULL);
+	}
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(broadcast_example_process, ev, data)
@@ -720,6 +731,9 @@ PROCESS_THREAD(broadcast_example_process, ev, data)
  
 
   PROCESS_BEGIN();
+
+  neighbour_added_event = process_alloc_event();
+
   //convert node id from int to string in order to send it 
   snprintf(node_id_str, 3, "%d", node_id);
   
@@ -749,16 +763,16 @@ PROCESS_THREAD(event_process, ev, data)
   static int event_timer_interval;
 
   PROCESS_BEGIN();
-  publish_trigger_event = process_alloc_event();
+  event_of_interest_event = process_alloc_event();
   
   while(1) {
     
-    event_timer_interval = (rand() % MAX_RAND_EVENT_TIME)+1;
+    event_timer_interval = (rand() % MAX_EVENT_OF_INTEREST_DELAY) + MIN_EVENT_OF_INTEREST_DELAY;
     etimer_set(&event_timer, CLOCK_SECOND * event_timer_interval);
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&event_timer));
-		printf("EVENT OF INTEREEEEEEST\n");
-		event_fired = true;
-    process_post(&mqtt_demo_process,publish_trigger_event, NULL);
+    printf("EVENT OF INTEREST TRIGGERED\n");
+    event_fired = true;
+    process_post(&mqtt_demo_process,event_of_interest_event, NULL);
     
   }
 
