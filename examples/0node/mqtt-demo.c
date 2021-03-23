@@ -47,8 +47,22 @@
 #define SEND_INTERVAL		(20 * CLOCK_SECOND)
 #define SEND_TIME		(random_rand() % (SEND_INTERVAL))
 #define MAX_NEIGHBOURS_SAVED 16
+#define MAX_RAND_EVENT_TIME 10
 
 static struct simple_udp_connection broadcast_connection;
+
+//event that gets posted when there's something to publish
+static process_event_t publish_trigger;
+
+/*
+When either a random event of interest or a new neighbour has been discovered, 
+an event gets fired. When that happens, it may occur that the finite state machine
+that implements the mqtt functionalities isn't anymore in the publishing state, 
+therefore the following variables are used to flag  that there's something to publish, 
+so when the machine will go back to the publishing state, the update won't be missed
+*/
+static bool event_fired;
+static bool something_to_publish;
 
 typedef struct neighbour_s{
 	int id;
@@ -124,7 +138,8 @@ static uint8_t state;
 /*---------------------------------------------------------------------------*/
 PROCESS_NAME(mqtt_demo_process);
 PROCESS(broadcast_example_process, "UDP broadcast example process");
-AUTOSTART_PROCESSES(&mqtt_demo_process,&broadcast_example_process);
+PROCESS(event_process, "Random Event Process");
+AUTOSTART_PROCESSES(&mqtt_demo_process,&broadcast_example_process,&event_process);
 /*---------------------------------------------------------------------------*/
 /**
  * \brief Data structure declaration for the MQTT client configuration
@@ -552,8 +567,6 @@ state_machine(void)
         subscribe();
         state = STATE_PUBLISHING;
       } else {
-        leds_on(MQTT_DEMO_STATUS_LED);
-        ctimer_set(&ct, PUBLISH_LED_ON_DURATION, publish_led_off, NULL);
         //TODO wait for new neighbour added instead of publishing periodically
         publish();
       }
@@ -637,6 +650,7 @@ PROCESS_THREAD(mqtt_demo_process, ev, data)
     PROCESS_YIELD();
     //if a timer elapses and that timer is publish periodic timer, switch state in the machine
     if (ev == PROCESS_EVENT_TIMER && data == &publish_periodic_timer) {
+			//if state == publisghing wait event??? per adesso farlo a cazzo di cane
       state_machine();
     }
 
@@ -719,6 +733,27 @@ PROCESS_THREAD(broadcast_example_process, ev, data)
     printf("Sending broadcast from %s\n",node_id_str);
     uip_create_linklocal_allnodes_mcast(&addr);
     simple_udp_sendto(&broadcast_connection, node_id_str, 3, &addr);
+  }
+
+  PROCESS_END();
+}
+/*---------------------------------------------------------------------------*/
+PROCESS_THREAD(event_process, ev, data)
+{
+  
+  static struct etimer event_timer;
+  static int event_timer_interval;
+
+  PROCESS_BEGIN();
+  publish_trigger = process_alloc_event();
+  
+  while(1) {
+    
+    event_timer_interval = (rand() % MAX_RAND_EVENT_TIME)+1;
+    etimer_set(&event_timer, CLOCK_SECOND * event_timer_interval);
+    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&event_timer));
+		printf("EVENT OF INTEREEEEEEST\n");
+    
   }
 
   PROCESS_END();
