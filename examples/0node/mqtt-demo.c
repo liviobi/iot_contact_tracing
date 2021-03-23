@@ -437,7 +437,6 @@ static void publish_alert(void){
     event_fired = false;
 }
 
-}
 /*---------------------------------------------------------------------------*/
 static void publish_neighbours(void)
 {
@@ -704,8 +703,7 @@ receiver(struct simple_udp_connection *c,
          uint16_t datalen)
 {
   int sender_id = atoi((char*)data);
-  //printf("Data received on port %d from port %d sent by %d\n",
-         receiver_port, sender_port, sender_id);
+  //printf("Data received on port %d from port %d sent by %d\n",receiver_port, sender_port, sender_id);
 	int i;
 	bool neighbour_added = false;
 	for(i = 0; i < MAX_NEIGHBOURS_SAVED; i++){
