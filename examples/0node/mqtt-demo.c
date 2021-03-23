@@ -62,7 +62,7 @@ therefore the following variables are used to flag  that there's something to pu
 so when the machine will go back to the publishing state, the update won't be missed
 */
 static bool event_fired;
-static bool something_to_publish;
+static bool new_neighbour_added;
 
 typedef struct neighbour_s{
 	int id;
@@ -566,11 +566,11 @@ state_machine(void)
       if(state == STATE_CONNECTED) {
         subscribe();
         state = STATE_PUBLISHING;
+        etimer_set(&publish_periodic_timer, conf.pub_interval);
       } else {
         //TODO wait for new neighbour added instead of publishing periodically
         publish();
       }
-      etimer_set(&publish_periodic_timer, conf.pub_interval);
 
       LOG_INFO("Publishing\n");
       /* Return here so we don't end up rescheduling the timer */
@@ -650,8 +650,10 @@ PROCESS_THREAD(mqtt_demo_process, ev, data)
     PROCESS_YIELD();
     //if a timer elapses and that timer is publish periodic timer, switch state in the machine
     if (ev == PROCESS_EVENT_TIMER && data == &publish_periodic_timer) {
-			//if state == publisghing wait event??? per adesso farlo a cazzo di cane
-      state_machine();
+        state_machine();
+    }else if(data == &publish_trigger && state == STATE_PUBLISHING){
+        printf("IN STATE PUBLISHING");
+        state_machine();
     }
 
   }
@@ -753,6 +755,8 @@ PROCESS_THREAD(event_process, ev, data)
     etimer_set(&event_timer, CLOCK_SECOND * event_timer_interval);
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&event_timer));
 		printf("EVENT OF INTEREEEEEEST\n");
+		event_fired = true;
+        process_post(&mqtt_demo_process,publish_trigger, NULL);
     
   }
 
