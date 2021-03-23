@@ -52,7 +52,7 @@
 static struct simple_udp_connection broadcast_connection;
 
 //event that gets posted when there's something to publish
-static process_event_t publish_trigger;
+static process_event_t publish_trigger_event;
 
 /*
 When either a random event of interest or a new neighbour has been discovered, 
@@ -651,7 +651,7 @@ PROCESS_THREAD(mqtt_demo_process, ev, data)
     //if a timer elapses and that timer is publish periodic timer, switch state in the machine
     if (ev == PROCESS_EVENT_TIMER && data == &publish_periodic_timer) {
         state_machine();
-    }else if(data == &publish_trigger && state == STATE_PUBLISHING){
+    }else if(ev == publish_trigger_event && state == STATE_PUBLISHING){
         printf("IN STATE PUBLISHING");
         state_machine();
     }
@@ -747,7 +747,7 @@ PROCESS_THREAD(event_process, ev, data)
   static int event_timer_interval;
 
   PROCESS_BEGIN();
-  publish_trigger = process_alloc_event();
+  publish_trigger_event = process_alloc_event();
   
   while(1) {
     
@@ -756,7 +756,7 @@ PROCESS_THREAD(event_process, ev, data)
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&event_timer));
 		printf("EVENT OF INTEREEEEEEST\n");
 		event_fired = true;
-        process_post(&mqtt_demo_process,publish_trigger, NULL);
+    process_post(&mqtt_demo_process,publish_trigger_event, NULL);
     
   }
 
