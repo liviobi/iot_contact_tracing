@@ -166,7 +166,8 @@ typedef struct mqtt_client_config {
  */
 #define BUFFER_SIZE 64
 static char client_id[BUFFER_SIZE];
-static char pub_topic[BUFFER_SIZE];
+static char pub_topic_neighbours[BUFFER_SIZE];
+static char pub_topic_alerts[BUFFER_SIZE];
 static char sub_topic[BUFFER_SIZE];
 /*---------------------------------------------------------------------------*/
 /*
@@ -278,12 +279,19 @@ mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
 static int
 construct_pub_topic(void)
 {
-  int len = snprintf(pub_topic, BUFFER_SIZE, MQTT_DEMO_PUBLISH_TOPIC);
+  int len = snprintf(pub_topic_neighbours, BUFFER_SIZE, MQTT_DEMO_PUBLISH_TOPIC);
 
   /* len < 0: Error. Len >= BUFFER_SIZE: Buffer too small */
   if(len < 0 || len >= BUFFER_SIZE) {
     LOG_ERR("Pub topic: %d, buffer %d\n", len, BUFFER_SIZE);
     return 0;
+  }
+
+  len = snprintf(pub_topic_alerts, BUFFER_SIZE, MQTT_DEMO_PUBLISH_TOPIC_ALERT);
+  /* len < 0: Error. Len >= BUFFER_SIZE: Buffer too small */
+  if(len < 0 || len >= BUFFER_SIZE) {
+      LOG_ERR("Pub topic: %d, buffer %d\n", len, BUFFER_SIZE);
+      return 0;
   }
 
   return 1;
@@ -406,20 +414,42 @@ static bool neighbours_to_publish(){
 
 }
 /*---------------------------------------------------------------------------*/
-static void publish(void)
+static void publish_alert(void){
+    int len;
+    int remaining = APP_BUFFER_SIZE;
+
+    buf_ptr = app_buffer;
+
+    len = snprintf(buf_ptr, remaining,
+                   "{"
+                   "\"id\": %d}",
+                   node_id);
+
+    if(len < 0 || len >= remaining) {
+        LOG_ERR("Buffer too short. Have %d, need %d + \\0\n", remaining, len);
+        return;
+    }
+
+    mqtt_publish(&conn, NULL, pub_topic_alerts, (uint8_t *)app_buffer,
+                 strlen(app_buffer), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
+
+    LOG_INFO("Publish for alert sent out!\n");
+    event_fired = false;
+}
+
+}
+/*---------------------------------------------------------------------------*/
+static void publish_neighbours(void)
 {
-    //check if there's something to publish, TODO remove when adding event
+    //check if there's something to publish
     if(!neighbours_to_publish()){
         //LOG_INFO("No new neighbours to publish\n");
         return;
     }
-    if(event_fired){
-        printf("EVENT OF INTEREST IN PUBLISH\n");
-        event_fired = false;
-    }
+
 
   int len;
-	//TODO CHECK BUFFER SIZE
+	//TODO CHECK BUFFER SIZE dimensions
   int remaining = APP_BUFFER_SIZE;
 
   seq_nr_value++;
@@ -490,7 +520,7 @@ static void publish(void)
     return;
   }*/
 
-  mqtt_publish(&conn, NULL, pub_topic, (uint8_t *)app_buffer,
+  mqtt_publish(&conn, NULL, pub_topic_neighbours, (uint8_t *)app_buffer,
                strlen(app_buffer), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
 
   LOG_INFO("Publish sent out!\n");
@@ -559,8 +589,12 @@ state_machine(void)
 				//at least once i.e. be sure to publish after a disconnection
         etimer_set(&publish_periodic_timer, conf.pub_interval);
       } else {
-
-        publish();
+          //Publish new neighbours to the specific topic
+          publish_neighbours();
+          //Check if there is an alert to send and possibly send it
+          if(event_fired){
+              publish_alert();
+          }
 
       }
       /* Return here so we don't end up rescheduling the timer */
