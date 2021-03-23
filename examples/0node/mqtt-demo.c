@@ -421,7 +421,7 @@ static void publish(void)
 {
     //check if there's something to publish, TODO remove when adding event
     if(!neighbours_to_publish()){
-        LOG_INFO("No new neighbours to publish\n");
+        //LOG_INFO("No new neighbours to publish\n");
         return;
     }
 
@@ -566,13 +566,15 @@ state_machine(void)
       if(state == STATE_CONNECTED) {
         subscribe();
         state = STATE_PUBLISHING;
+				//I leave it here to be sure that each time the machine passes from
+				//connecting to publishing, the queue of events to be published is red
+				//at least once i.e. be sure to publish after a disconnection
         etimer_set(&publish_periodic_timer, conf.pub_interval);
       } else {
-        //TODO wait for new neighbour added instead of publishing periodically
-        publish();
-      }
 
-      LOG_INFO("Publishing\n");
+        publish();
+
+      }
       /* Return here so we don't end up rescheduling the timer */
       return;
     } else {
