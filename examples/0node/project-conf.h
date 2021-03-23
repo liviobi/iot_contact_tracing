@@ -46,8 +46,9 @@
 #define MQTT_DEMO_TRIGGER_LED LEDS_RED
 #define MQTT_DEMO_PUBLISH_TRIGGER &button_left_sensor
 
-#define MQTT_DEMO_PUBLISH_TOPIC   "iot/native/launchpad/json"
-#define MQTT_DEMO_SUB_TOPIC       "iot/native/launchpad/json"
+#define MQTT_DEMO_PUBLISH_TOPIC   "lgf/project1/neighbours"
+#define MQTT_DEMO_PUBLISH_TOPIC_ALERT   "lgf/project1/alert"
+#define MQTT_DEMO_SUB_TOPIC       "prova"
 
 #define MQTT_DEMO_BROKER_IP_ADDR "fd00::1"
 //*---------------------------------------------------------------------------*/

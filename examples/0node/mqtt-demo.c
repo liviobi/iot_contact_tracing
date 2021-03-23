@@ -389,12 +389,6 @@ subscribe(void)
   }
 }
 /*---------------------------------------------------------------------------*/
-static int
-get_onboard_temp(void)
-{
-  return NATIVE_TEMPERATURE;
-}
-/*---------------------------------------------------------------------------*/
 static bool neighbours_to_publish(){
     //check if there are new neighbours to publish to the backend
     int i;
@@ -676,7 +670,7 @@ receiver(struct simple_udp_connection *c,
          uint16_t datalen)
 {
   int sender_id = atoi((char*)data);
-  printf("Data received on port %d from port %d sent by %d\n",
+  //printf("Data received on port %d from port %d sent by %d\n",
          receiver_port, sender_port, sender_id);
 	int i;
 	bool neighbour_added = false;
@@ -737,7 +731,7 @@ PROCESS_THREAD(broadcast_example_process, ev, data)
     etimer_set(&send_timer, SEND_TIME);
 
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&send_timer));
-    printf("Sending broadcast from %s\n",node_id_str);
+    //printf("Sending broadcast from %s\n",node_id_str);
     uip_create_linklocal_allnodes_mcast(&addr);
     simple_udp_sendto(&broadcast_connection, node_id_str, 3, &addr);
   }
