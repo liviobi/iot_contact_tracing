@@ -213,12 +213,6 @@ ipaddr_sprintf(char *buf, uint8_t buf_len, const uip_ipaddr_t *addr)
 }
 /*---------------------------------------------------------------------------*/
 static void
-publish_led_off(void *d)
-{
-  leds_off(MQTT_DEMO_STATUS_LED);
-}
-/*---------------------------------------------------------------------------*/
-static void
 pub_handler(const char *topic, uint16_t topic_len, const uint8_t *chunk,
             uint16_t chunk_len)
 {
@@ -542,16 +536,11 @@ state_machine(void)
       /* Registered and with a global IPv6 address, connect! */
       LOG_INFO("Joined network! Connect attempt %u\n", connect_attempt);
       connect_to_broker();
-    } else {
-      leds_on(MQTT_DEMO_STATUS_LED);
-      ctimer_set(&ct, NO_NET_LED_DURATION, publish_led_off, NULL);
     }
     etimer_set(&publish_periodic_timer, NET_CONNECT_PERIODIC);
     return;
     break;
   case STATE_CONNECTING:
-    leds_on(MQTT_DEMO_STATUS_LED);
-    ctimer_set(&ct, CONNECTING_LED_DURATION, publish_led_off, NULL);
     /* Not connected yet. Wait */
     //LOG_INFO("Connecting: retry %u...\n", connect_attempt);
     break;
@@ -658,7 +647,7 @@ PROCESS_THREAD(mqtt_demo_process, ev, data)
     //if a timer elapses and that timer is publish periodic timer, switch state in the machine
     if (ev == PROCESS_EVENT_TIMER && data == &publish_periodic_timer) {
         state_machine();
-    }else if((/*ev == event_of_interest_event || */ev == neighbour_added_event) && state == STATE_PUBLISHING){
+    }else if((ev == event_of_interest_event || ev == neighbour_added_event) && state == STATE_PUBLISHING){
         printf("IN STATE PUBLISHING\n");
         state_machine();
     }
