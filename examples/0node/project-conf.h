@@ -48,7 +48,7 @@
 
 #define MQTT_DEMO_PUBLISH_TOPIC   "lgf/project1/neighbours"
 #define MQTT_DEMO_PUBLISH_TOPIC_ALERT   "lgf/project1/alert"
-#define MQTT_DEMO_SUB_TOPIC       "prova"
+#define MQTT_DEMO_SUB_TOPIC       "lgf/project1/"
 
 #define MQTT_DEMO_BROKER_IP_ADDR "fd00::1"
 //*---------------------------------------------------------------------------*/

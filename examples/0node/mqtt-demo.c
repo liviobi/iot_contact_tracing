@@ -49,6 +49,7 @@
 #define MAX_NEIGHBOURS_SAVED 16
 #define MAX_EVENT_OF_INTEREST_DELAY 80
 #define MIN_EVENT_OF_INTEREST_DELAY 20
+#define ALERT_ENABLED 0
 
 static struct simple_udp_connection broadcast_connection;
 
@@ -219,12 +220,10 @@ pub_handler(const char *topic, uint16_t topic_len, const uint8_t *chunk,
 {
   LOG_INFO("Pub handler: topic='%s' (len=%u), chunk_len=%u\n", topic, topic_len,
       chunk_len);
+	int sender_id = chunk[0] - 48;
+ 	printf("ALERT FROM: %d\n",sender_id);
 
-  /* If the format != json, ignore */
-  if(strncmp(&topic[topic_len - 4], "json", 4) != 0) {
-    LOG_ERR("Incorrect format\n");
-    return;
-  }
+	
 }
 /*---------------------------------------------------------------------------*/
 static void
@@ -247,12 +246,12 @@ mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
   case MQTT_EVENT_PUBLISH: {
     msg_ptr = data;
 
-    if(msg_ptr->first_chunk) {
+    /*if(msg_ptr->first_chunk) {
       msg_ptr->first_chunk = 0;
       LOG_INFO("Application received a publish on topic '%s'; payload "
           "size is %i bytes\n",
           msg_ptr->topic, msg_ptr->payload_length);
-    }
+    }*/
 
     pub_handler(msg_ptr->topic, strlen(msg_ptr->topic), msg_ptr->payload_chunk,
                 msg_ptr->payload_length);
@@ -299,15 +298,14 @@ construct_pub_topic(void)
 /*---------------------------------------------------------------------------*/
 static int
 construct_sub_topic(void)
-{
-  int len = snprintf(sub_topic, BUFFER_SIZE, MQTT_DEMO_SUB_TOPIC);
-
-  /* len < 0: Error. Len >= BUFFER_SIZE: Buffer too small */
-  if(len < 0 || len >= BUFFER_SIZE) {
-    LOG_INFO("Sub topic: %d, buffer %d\n", len, BUFFER_SIZE);
-    return 0;
-  }
-
+{	
+	//int remaining = BUFFER_SIZE;
+  int len = snprintf(sub_topic, BUFFER_SIZE, "lgf/project1/%d",node_id);
+	//sub_topic += len;
+	//remaining -=len;
+	//len = snprintf(sub_topic, remaining,"%d",node_id );
+	printf("AAAAAAAAAAAAAAAAAAAAAA\n");
+	printf("%s\n", sub_topic);
   return 1;
 }
 /*---------------------------------------------------------------------------*/
@@ -781,13 +779,14 @@ PROCESS_THREAD(event_process, ev, data)
   event_of_interest_event = process_alloc_event();
   
   while(1) {
-    
     event_timer_interval = (rand() % MAX_EVENT_OF_INTEREST_DELAY) + MIN_EVENT_OF_INTEREST_DELAY;
     etimer_set(&event_timer, CLOCK_SECOND * event_timer_interval);
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&event_timer));
-    printf("EVENT OF INTEREST TRIGGERED\n");
-    event_fired = true;
-    process_post(&mqtt_demo_process,event_of_interest_event, NULL);
+		if(ALERT_ENABLED){
+			printf("EVENT OF INTEREST TRIGGERED\n");
+    	event_fired = true;
+    	process_post(&mqtt_demo_process,event_of_interest_event, NULL);
+    }
     
   }
 
