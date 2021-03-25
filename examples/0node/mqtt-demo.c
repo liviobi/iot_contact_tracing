@@ -721,7 +721,7 @@ receiver(struct simple_udp_connection *c,
 		}else{
 			//neighbour already seen
 			if(neighbours[i]->id == sender_id){
-				printf("already seen neighbour: %d\n", sender_id);
+				//printf("Already seen neighbour: %d\n", sender_id);
 				break;
 			}
 		}
