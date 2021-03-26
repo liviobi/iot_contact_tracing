@@ -210,7 +210,7 @@ packet_input(void)
 #if NETSTACK_CONF_WITH_IPV6
       tcpip_ipv6_output();
 #else /* NETSTACK_CONF_WITH_IPV6 */
-      PRINTF("tcpip packet_input output len %d\n", uip_len);
+      //PRINTF("tcpip packet_input output len %d\n", uip_len);
       tcpip_output();
 #endif /* NETSTACK_CONF_WITH_IPV6 */
 #endif /* UIP_CONF_TCP_SPLIT */
@@ -431,9 +431,9 @@ eventhandler(process_event_t ev, process_data_t data)
           tcpip_ipv6_output();
 #else
           if(uip_len > 0) {
-            PRINTF("tcpip_output from periodic len %d\n", uip_len);
+            //PRINTF("tcpip_output from periodic len %d\n", uip_len);
             tcpip_output();
-            PRINTF("tcpip_output after periodic len %d\n", uip_len);
+            //PRINTF("tcpip_output after periodic len %d\n", uip_len);
           }
 #endif /* NETSTACK_CONF_WITH_IPV6 */
         }
@@ -488,7 +488,7 @@ eventhandler(process_event_t ev, process_data_t data)
       tcpip_ipv6_output();
 #else /* NETSTACK_CONF_WITH_IPV6 */
       if(uip_len > 0) {
-        PRINTF("tcpip_output from tcp poll len %d\n", uip_len);
+        //PRINTF("tcpip_output from tcp poll len %d\n", uip_len);
         tcpip_output();
       }
 #endif /* NETSTACK_CONF_WITH_IPV6 */
@@ -551,7 +551,7 @@ tcpip_ipv6_output(void)
 #if UIP_CONF_IPV6_RPL
   if(!rpl_update_header()) {
     /* Packet can not be forwarded */
-    PRINTF("tcpip_ipv6_output: RPL header update error\n");
+    //PRINTF("tcpip_ipv6_output: RPL header update error\n");
     uip_clear_buf();
     return;
   }
@@ -649,9 +649,9 @@ tcpip_ipv6_output(void)
         static uint8_t annotate_has_last = 0;
 
         if(annotate_has_last) {
-          printf("#L %u 0; red\n", annotate_last);
+          //printf("#L %u 0; red\n", annotate_last);
         }
-        printf("#L %u 1; red\n", nexthop->u8[sizeof(uip_ipaddr_t) - 1]);
+        //printf("#L %u 1; red\n", nexthop->u8[sizeof(uip_ipaddr_t) - 1]);
         annotate_last = nexthop->u8[sizeof(uip_ipaddr_t) - 1];
         annotate_has_last = 1;
       }

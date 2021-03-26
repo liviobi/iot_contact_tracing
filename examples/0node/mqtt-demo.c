@@ -23,7 +23,6 @@
 #include "sys/ctimer.h"
 #include "lib/sensors.h"
 #include "dev/button-sensor.h"
-#include "dev/leds.h"
 
 
 #include "simple-udp.h"
@@ -88,13 +87,6 @@ static const char *broker_ip = MQTT_DEMO_BROKER_IP_ADDR;
  */
 #define STATE_MACHINE_PERIODIC     (CLOCK_SECOND >> 1)
 /*---------------------------------------------------------------------------*/
-/* Provide visible feedback via LEDS during various states */
-/* When connecting to broker */
-#define CONNECTING_LED_DURATION    (CLOCK_SECOND >> 2)
-
-/* Each time we try to publish */
-#define PUBLISH_LED_ON_DURATION    (CLOCK_SECOND)
-/*---------------------------------------------------------------------------*/
 /* Connections and reconnections */
 #define RETRY_FOREVER              0xFF
 #define RECONNECT_INTERVAL         (CLOCK_SECOND * 2)
@@ -128,7 +120,6 @@ static uint8_t state;
 /*---------------------------------------------------------------------------*/
 /* A timeout used when waiting to connect to a network */
 #define NET_CONNECT_PERIODIC        (CLOCK_SECOND >> 2)
-#define NO_NET_LED_DURATION         (NET_CONNECT_PERIODIC >> 1)
 /*---------------------------------------------------------------------------*/
 /* Default configuration values */
 #define DEFAULT_TYPE_ID             "native"
@@ -640,7 +631,6 @@ state_machine(void)
     return;
   case STATE_ERROR:
   default:
-    leds_on(MQTT_DEMO_STATUS_LED);
     /*
      * 'default' should never happen
      *
