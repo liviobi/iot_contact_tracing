@@ -393,7 +393,7 @@ set_prefix_64(uip_ipaddr_t *prefix_64)
   dag = rpl_set_root(RPL_DEFAULT_INSTANCE, &ipaddr);
   if(dag != NULL) {
     rpl_set_prefix(dag, &prefix, 64);
-    PRINTF("created a new RPL dag\n");
+    //PRINTF("created a new RPL dag\n");
   }
 }
 /*---------------------------------------------------------------------------*/
@@ -415,7 +415,7 @@ PROCESS_THREAD(border_router_process, ev, data)
 
   SENSORS_ACTIVATE(button_sensor);
 
-  PRINTF("RPL-Border router started\n");
+  //PRINTF("RPL-Border router started\n");
 #if 0
    /* The border router runs with a 100% duty cycle in order to ensure high
      packet reception rates.
@@ -443,7 +443,7 @@ PROCESS_THREAD(border_router_process, ev, data)
   while(1) {
     PROCESS_YIELD();
     if (ev == sensors_event && data == &button_sensor) {
-      PRINTF("Initiating global repair\n");
+      //PRINTF("Initiating global repair\n");
       rpl_repair_root(RPL_DEFAULT_INSTANCE);
     }
   }

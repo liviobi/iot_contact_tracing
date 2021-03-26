@@ -290,13 +290,8 @@ construct_pub_topic(void)
 static int
 construct_sub_topic(void)
 {	
-	//int remaining = BUFFER_SIZE;
   int len = snprintf(sub_topic, BUFFER_SIZE, "lgf/project1/%d",node_id);
-	//sub_topic += len;
-	//remaining -=len;
-	//len = snprintf(sub_topic, remaining,"%d",node_id );
-	printf("AAAAAAAAAAAAAAAAAAAAAA\n");
-	printf("%s\n", sub_topic);
+	//printf("Subbing to %s\n", sub_topic);
   return 1;
 }
 /*---------------------------------------------------------------------------*/
@@ -663,7 +658,6 @@ PROCESS_THREAD(mqtt_demo_process, ev, data)
     if (ev == PROCESS_EVENT_TIMER && data == &publish_periodic_timer) {
         state_machine();
     }else if((ev == event_of_interest_event || ev == neighbour_added_event) && state == STATE_PUBLISHING){
-        printf("IN STATE PUBLISHING\n");
         state_machine();
     }
 
