@@ -1,36 +1,28 @@
 #include "contiki-conf.h"
-#include "rpl/rpl-private.h"
+#include "contiki.h"
 #include "mqtt.h"
+#include "sys/etimer.h"
+#include "lib/random.h"
+#include "sys/log.h"
+#include "string.h"
+#include "stdio.h"
+#include "stdbool.h"
+#include "stdlib.h"
+#include "sys/node-id.h"
+
+//NETWORK
+#include "rpl/rpl-private.h"
 #include "net/rpl/rpl.h"
 #include "net/ip/uip.h"
 #include "net/ipv6/uip-icmp6.h"
 #include "net/ipv6/sicslowpan.h"
-#include "sys/etimer.h"
-#include "sys/ctimer.h"
-#include "lib/sensors.h"
-#include "dev/button-sensor.h"
-
-
-#include "simple-udp.h"
-#include "contiki.h"
-#include "lib/random.h"
 #include "net/ipv6/uip-ds6.h"
-
-#include "sys/log.h"
-#define LOG_MODULE "MQTT"
-#define LOG_LEVEL LOG_LEVEL_INFO
-
-#include <string.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <sys/node-id.h>
+#include "simple-udp.h"
 
 
 #define UDP_PORT 1234
-
 #define SEND_INTERVAL		(20 * CLOCK_SECOND)
-#define SEND_TIME		(random_rand() % (SEND_INTERVAL))
+#define BROADCAST_SEND_INTERVAL		(random_rand() % (SEND_INTERVAL))
 #define MAX_NEIGHBOURS_SAVED 16
 #define MAX_EVENT_OF_INTEREST_DELAY 80
 #define MIN_EVENT_OF_INTEREST_DELAY 20
@@ -66,24 +58,6 @@ static neighbour* neighbours[MAX_NEIGHBOURS_SAVED] = {NULL};
  * the node that hosts your border router
  */
 static const char *broker_ip = MQTT_BROKER_IP_ADDR;
-#define DEFAULT_ORG_ID              "mqtt-demo"
-/*---------------------------------------------------------------------------*/
-/*
- * A timeout used when waiting for something to happen (e.g. to connect or to
- * disconnect)
- */
-#define STATE_MACHINE_PERIODIC     (CLOCK_SECOND >> 1)
-/*---------------------------------------------------------------------------*/
-/* Connections and reconnections */
-#define RETRY_FOREVER              0xFF
-#define RECONNECT_INTERVAL         (CLOCK_SECOND * 2)
-/*---------------------------------------------------------------------------*/
-/*
- * Number of times to try reconnecting to the broker.
- * Can be a limited number (e.g. 3, 10 etc) or can be set to RETRY_FOREVER
- */
-#define RECONNECT_ATTEMPTS         RETRY_FOREVER
-#define CONNECTION_STABLE_TIME     (CLOCK_SECOND * 5)
 static struct timer connection_life;
 static uint8_t connect_attempt;
 /*---------------------------------------------------------------------------*/
@@ -98,28 +72,11 @@ static uint8_t state;
 #define STATE_NEWCONFIG       6
 #define STATE_CONFIG_ERROR 0xFE
 #define STATE_ERROR        0xFF
-/*---------------------------------------------------------------------------*/
-#define CONFIG_ORG_ID_LEN        32
-#define CONFIG_TYPE_ID_LEN       32
-#define CONFIG_AUTH_TOKEN_LEN    32
-#define CONFIG_CMD_TYPE_LEN       8
-#define CONFIG_IP_ADDR_STR_LEN   64
-/*---------------------------------------------------------------------------*/
-/* A timeout used when waiting to connect to a network */
-#define NET_CONNECT_PERIODIC        (CLOCK_SECOND >> 2)
-/*---------------------------------------------------------------------------*/
-/* Default configuration values */
-#define DEFAULT_TYPE_ID             "native"
-#define DEFAULT_AUTH_TOKEN          "AUTHZ"
-#define DEFAULT_SUBSCRIBE_CMD_TYPE  "+"
-#define DEFAULT_BROKER_PORT         1883
-#define DEFAULT_PUBLISH_INTERVAL    (60 * CLOCK_SECOND)
-#define DEFAULT_KEEP_ALIVE_TIMER    60
-/*---------------------------------------------------------------------------*/
-PROCESS_NAME(mqtt_process);
+
+PROCESS_NAME(mqtt_device_process);
 PROCESS(broadcast_example_process, "UDP broadcast example process");
 PROCESS(event_process, "Random Event Process");
-AUTOSTART_PROCESSES(&mqtt_process,&broadcast_example_process,&event_process);
+AUTOSTART_PROCESSES(&mqtt_device_process,&broadcast_example_process,&event_process);
 /*---------------------------------------------------------------------------*/
 /**
  * \brief Data structure declaration for the MQTT client configuration
@@ -159,13 +116,12 @@ static char app_buffer[APP_BUFFER_SIZE];
 /*---------------------------------------------------------------------------*/
 static struct mqtt_message *msg_ptr = 0;
 static struct etimer publish_periodic_timer;
-static struct ctimer ct;
 static char *buf_ptr;
 static uint16_t seq_nr_value = 0;
 /*---------------------------------------------------------------------------*/
 static mqtt_client_config_t conf;
 /*---------------------------------------------------------------------------*/
-PROCESS(mqtt_process, "MQTT");
+PROCESS(mqtt_device_process, "MQTT");
 /*---------------------------------------------------------------------------*/
 int
 ipaddr_sprintf(char *buf, uint8_t buf_len, const uip_ipaddr_t *addr)
@@ -218,20 +174,12 @@ mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
     LOG_INFO("MQTT Disconnect: reason %u\n", *((mqtt_event_t *)data));
 
     state = STATE_DISCONNECTED;
-		process_post(&mqtt_process,disconnection_event, NULL);
-    process_poll(&mqtt_process);
+		process_post(&mqtt_device_process,disconnection_event, NULL);
+    process_poll(&mqtt_device_process);
     break;
   }
   case MQTT_EVENT_PUBLISH: {
     msg_ptr = data;
-
-    /*if(msg_ptr->first_chunk) {
-      msg_ptr->first_chunk = 0;
-      LOG_INFO("Application received a publish on topic '%s'; payload "
-          "size is %i bytes\n",
-          msg_ptr->topic, msg_ptr->payload_length);
-    }*/
-
     pub_handler(msg_ptr->topic, strlen(msg_ptr->topic), msg_ptr->payload_chunk,
                 msg_ptr->payload_length);
     break;
@@ -278,7 +226,7 @@ construct_pub_topic(void)
 static int
 construct_sub_topic(void)
 {	
-  int len = snprintf(sub_topic, BUFFER_SIZE, "lgf/project1/%d",node_id);
+  snprintf(sub_topic, BUFFER_SIZE, "lgf/project1/%d",node_id);
 	//printf("Subbing to %s\n", sub_topic);
   return 1;
 }
@@ -513,7 +461,7 @@ state_machine(void)
   switch(state) {
   case STATE_INIT:
     /* If we have just been configured register MQTT connection */
-    mqtt_register(&conn, &mqtt_process, client_id, mqtt_event,
+    mqtt_register(&conn, &mqtt_device_process, client_id, mqtt_event,
                   MAX_TCP_SEGMENT_SIZE);
 
     mqtt_set_username_password(&conn, "use-token-auth",
@@ -628,7 +576,7 @@ state_machine(void)
   etimer_set(&publish_periodic_timer, STATE_MACHINE_PERIODIC);
 }
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(mqtt_process, ev, data)
+PROCESS_THREAD(mqtt_device_process, ev, data)
 {
 
   PROCESS_BEGIN();
@@ -704,7 +652,7 @@ receiver(struct simple_udp_connection *c,
 	}
 
 	if(neighbour_added){
-        process_post(&mqtt_process,neighbour_added_event, NULL);
+        process_post(&mqtt_device_process,neighbour_added_event, NULL);
 	}
 }
 /*---------------------------------------------------------------------------*/
@@ -731,7 +679,7 @@ PROCESS_THREAD(broadcast_example_process, ev, data)
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
     etimer_reset(&periodic_timer);
-    etimer_set(&send_timer, SEND_TIME);
+    etimer_set(&send_timer, BROADCAST_SEND_INTERVAL);
 
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&send_timer));
     //printf("Sending broadcast from %s\n",node_id_str);
@@ -758,7 +706,7 @@ PROCESS_THREAD(event_process, ev, data)
 		if(ALERT_ENABLED){
 			printf("EVENT OF INTEREST TRIGGERED\n");
     	event_fired = true;
-    	process_post(&mqtt_process,event_of_interest_event, NULL);
+    	process_post(&mqtt_device_process,event_of_interest_event, NULL);
     }
     
   }
@@ -766,7 +714,3 @@ PROCESS_THREAD(event_process, ev, data)
   PROCESS_END();
 }
 /*---------------------------------------------------------------------------*/
-/**
- * @}
- * @}
- */
