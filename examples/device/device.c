@@ -55,6 +55,7 @@ static struct simple_udp_connection broadcast_connection;
 //event that gets posted when there's something to publish
 static process_event_t event_of_interest_event;
 static process_event_t neighbour_added_event;
+static process_event_t disconnection_event;
 
 /*
 When a random event of interest occurs,
@@ -231,6 +232,7 @@ mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
     LOG_INFO("MQTT Disconnect: reason %u\n", *((mqtt_event_t *)data));
 
     state = STATE_DISCONNECTED;
+		process_post(&mqtt_demo_process,disconnection_event, NULL);
     process_poll(&mqtt_demo_process);
     break;
   }
@@ -373,7 +375,7 @@ subscribe(void)
 {
   mqtt_status_t status;
 
-  status = mqtt_subscribe(&conn, NULL, sub_topic, MQTT_QOS_LEVEL_0);
+  status = mqtt_subscribe(&conn, NULL, sub_topic, MQTT_QOS_LEVEL_1);
 
   LOG_INFO("Subscribing\n");
   if(status == MQTT_STATUS_OUT_QUEUE_FULL) {
@@ -415,7 +417,7 @@ static void publish_alert(void){
     }
 
     mqtt_publish(&conn, NULL, pub_topic_alerts, (uint8_t *)app_buffer,
-                 strlen(app_buffer), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
+                 strlen(app_buffer), MQTT_QOS_LEVEL_1, MQTT_RETAIN_OFF);
 
     LOG_INFO("Publish for alert sent out!\n");
     event_fired = false;
@@ -504,10 +506,9 @@ static void publish_neighbours(void)
   }*/
 
   mqtt_publish(&conn, NULL, pub_topic_neighbours, (uint8_t *)app_buffer,
-               strlen(app_buffer), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
+               strlen(app_buffer), MQTT_QOS_LEVEL_1, MQTT_RETAIN_OFF);
 
   LOG_INFO("Publish sent out!\n");
-	neighbour_added == false;
 }
 /*---------------------------------------------------------------------------*/
 static void
@@ -645,6 +646,7 @@ PROCESS_THREAD(mqtt_demo_process, ev, data)
 {
 
   PROCESS_BEGIN();
+	disconnection_event = process_alloc_event();
 
   LOG_INFO("MQTT Demo Process\n");
 
@@ -656,8 +658,9 @@ PROCESS_THREAD(mqtt_demo_process, ev, data)
 
     PROCESS_YIELD();
     //if a timer elapses and that timer is publish periodic timer, switch state in the machine
-    if (ev == PROCESS_EVENT_TIMER && data == &publish_periodic_timer) {
+    if (ev == PROCESS_EVENT_TIMER && data == &publish_periodic_timer || disconnection_event) {
         state_machine();
+		//Once the machine is in STATE_PUBLISHING wait for publish event triggering instead of a periodic timer
     }else if((ev == event_of_interest_event || ev == neighbour_added_event) && state == STATE_PUBLISHING){
         state_machine();
     }
