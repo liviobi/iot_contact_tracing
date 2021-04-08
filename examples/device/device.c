@@ -1,17 +1,3 @@
-/*---------------------------------------------------------------------------*/
-/** \addtogroup cc2538-examples
- * @{
- *
- * \defgroup cc2538-mqtt-demo CC2538 MQTT Demo Project
- *
- * Demonstrates MQTT functionality. Works with IBM Quickstart as well as
- * mosquitto.
- * @{
- *
- * \file
- * An MQTT example for the cc2538-based platforms
- */
-/*---------------------------------------------------------------------------*/
 #include "contiki-conf.h"
 #include "rpl/rpl-private.h"
 #include "mqtt.h"
@@ -31,7 +17,7 @@
 #include "net/ipv6/uip-ds6.h"
 
 #include "sys/log.h"
-#define LOG_MODULE "MQTT-DEMO"
+#define LOG_MODULE "MQTT"
 #define LOG_LEVEL LOG_LEVEL_INFO
 
 #include <string.h>
@@ -79,7 +65,7 @@ static neighbour* neighbours[MAX_NEIGHBOURS_SAVED] = {NULL};
  * Publish to a local MQTT broker (e.g. mosquitto) running on
  * the node that hosts your border router
  */
-static const char *broker_ip = MQTT_DEMO_BROKER_IP_ADDR;
+static const char *broker_ip = MQTT_BROKER_IP_ADDR;
 #define DEFAULT_ORG_ID              "mqtt-demo"
 /*---------------------------------------------------------------------------*/
 /*
@@ -130,10 +116,10 @@ static uint8_t state;
 #define DEFAULT_PUBLISH_INTERVAL    (60 * CLOCK_SECOND)
 #define DEFAULT_KEEP_ALIVE_TIMER    60
 /*---------------------------------------------------------------------------*/
-PROCESS_NAME(mqtt_demo_process);
+PROCESS_NAME(mqtt_process);
 PROCESS(broadcast_example_process, "UDP broadcast example process");
 PROCESS(event_process, "Random Event Process");
-AUTOSTART_PROCESSES(&mqtt_demo_process,&broadcast_example_process,&event_process);
+AUTOSTART_PROCESSES(&mqtt_process,&broadcast_example_process,&event_process);
 /*---------------------------------------------------------------------------*/
 /**
  * \brief Data structure declaration for the MQTT client configuration
@@ -179,7 +165,7 @@ static uint16_t seq_nr_value = 0;
 /*---------------------------------------------------------------------------*/
 static mqtt_client_config_t conf;
 /*---------------------------------------------------------------------------*/
-PROCESS(mqtt_demo_process, "MQTT Demo");
+PROCESS(mqtt_process, "MQTT");
 /*---------------------------------------------------------------------------*/
 int
 ipaddr_sprintf(char *buf, uint8_t buf_len, const uip_ipaddr_t *addr)
@@ -232,8 +218,8 @@ mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
     LOG_INFO("MQTT Disconnect: reason %u\n", *((mqtt_event_t *)data));
 
     state = STATE_DISCONNECTED;
-		process_post(&mqtt_demo_process,disconnection_event, NULL);
-    process_poll(&mqtt_demo_process);
+		process_post(&mqtt_process,disconnection_event, NULL);
+    process_poll(&mqtt_process);
     break;
   }
   case MQTT_EVENT_PUBLISH: {
@@ -271,7 +257,7 @@ mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
 static int
 construct_pub_topic(void)
 {
-  int len = snprintf(pub_topic_neighbours, BUFFER_SIZE, MQTT_DEMO_PUBLISH_TOPIC);
+  int len = snprintf(pub_topic_neighbours, BUFFER_SIZE, MQTT_PUBLISH_TOPIC);
 
   /* len < 0: Error. Len >= BUFFER_SIZE: Buffer too small */
   if(len < 0 || len >= BUFFER_SIZE) {
@@ -279,7 +265,7 @@ construct_pub_topic(void)
     return 0;
   }
 
-  len = snprintf(pub_topic_alerts, BUFFER_SIZE, MQTT_DEMO_PUBLISH_TOPIC_ALERT);
+  len = snprintf(pub_topic_alerts, BUFFER_SIZE, MQTT_PUBLISH_TOPIC_ALERT);
   /* len < 0: Error. Len >= BUFFER_SIZE: Buffer too small */
   if(len < 0 || len >= BUFFER_SIZE) {
       LOG_ERR("Pub topic: %d, buffer %d\n", len, BUFFER_SIZE);
@@ -527,7 +513,7 @@ state_machine(void)
   switch(state) {
   case STATE_INIT:
     /* If we have just been configured register MQTT connection */
-    mqtt_register(&conn, &mqtt_demo_process, client_id, mqtt_event,
+    mqtt_register(&conn, &mqtt_process, client_id, mqtt_event,
                   MAX_TCP_SEGMENT_SIZE);
 
     mqtt_set_username_password(&conn, "use-token-auth",
@@ -642,13 +628,13 @@ state_machine(void)
   etimer_set(&publish_periodic_timer, STATE_MACHINE_PERIODIC);
 }
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(mqtt_demo_process, ev, data)
+PROCESS_THREAD(mqtt_process, ev, data)
 {
 
   PROCESS_BEGIN();
 	disconnection_event = process_alloc_event();
 
-  LOG_INFO("MQTT Demo Process\n");
+  LOG_INFO("MQTT Process\n");
 
   init_config();
   update_config();
@@ -718,7 +704,7 @@ receiver(struct simple_udp_connection *c,
 	}
 
 	if(neighbour_added){
-        process_post(&mqtt_demo_process,neighbour_added_event, NULL);
+        process_post(&mqtt_process,neighbour_added_event, NULL);
 	}
 }
 /*---------------------------------------------------------------------------*/
@@ -772,7 +758,7 @@ PROCESS_THREAD(event_process, ev, data)
 		if(ALERT_ENABLED){
 			printf("EVENT OF INTEREST TRIGGERED\n");
     	event_fired = true;
-    	process_post(&mqtt_demo_process,event_of_interest_event, NULL);
+    	process_post(&mqtt_process,event_of_interest_event, NULL);
     }
     
   }
