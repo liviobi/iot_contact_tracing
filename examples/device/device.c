@@ -658,13 +658,12 @@ PROCESS_THREAD(mqtt_demo_process, ev, data)
 
     PROCESS_YIELD();
     //if a timer elapses and that timer is publish periodic timer, switch state in the machine
-    if (ev == PROCESS_EVENT_TIMER && data == &publish_periodic_timer || disconnection_event) {
+    if ((ev == PROCESS_EVENT_TIMER && data == &publish_periodic_timer) || ev ==disconnection_event) {
         state_machine();
 		//Once the machine is in STATE_PUBLISHING wait for publish event triggering instead of a periodic timer
     }else if((ev == event_of_interest_event || ev == neighbour_added_event) && state == STATE_PUBLISHING){
         state_machine();
     }
-
   }
 
   PROCESS_END();
