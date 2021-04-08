@@ -41,6 +41,7 @@ ifeq ($(PREFIX),)
 endif
 
 CONTIKI_WITH_IPV6 = 1
+MODULES += core/net/mac/tsch
 include $(CONTIKI)/Makefile.include
 
 $(CONTIKI)/tools/tunslip6:	$(CONTIKI)/tools/tunslip6.c
