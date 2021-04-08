@@ -23,7 +23,7 @@
 #define UDP_PORT 1234
 #define SEND_INTERVAL		(20 * CLOCK_SECOND)
 #define BROADCAST_SEND_INTERVAL		(random_rand() % (SEND_INTERVAL))
-#define MAX_NEIGHBOURS_SAVED 16
+#define MAX_NEIGHBOURS_SAVED 2
 #define MAX_EVENT_OF_INTEREST_DELAY 80
 #define MIN_EVENT_OF_INTEREST_DELAY 20
 #define ALERT_ENABLED 0
@@ -51,6 +51,8 @@ typedef struct neighbour_s{
 
 //Array to save the neighbours encountered, initialized to NULL
 static neighbour* neighbours[MAX_NEIGHBOURS_SAVED] = {NULL};
+//when the array holding the neighbours is full, start to delete from the least recent added
+static int neighbour_to_delete = 0;
 
 /*---------------------------------------------------------------------------*/
 /*
@@ -634,7 +636,7 @@ receiver(struct simple_udp_connection *c,
 				printf("malloc failed\n");
 			}else{
 				printf("Added new neighbour with id: %d\n", sender_id);
-                neighbour_added = true;
+        neighbour_added = true;
 			}
 			break;
 		}else{
@@ -645,10 +647,18 @@ receiver(struct simple_udp_connection *c,
 			}
 		}
 	}
-	//array of neighbours is full
+	//I have found a new neighbour and the array storing neighbours is full,
+	//need to delete the least recent
 	if(i == MAX_NEIGHBOURS_SAVED){
-		//TODO delete last seen neighbour
-		printf("can't add neighbour: %d array is full\n", sender_id);
+		neighbours[neighbour_to_delete]-> id = sender_id;
+		neighbours[neighbour_to_delete]-> saved = false;
+		//printf("deleted neighbour at pos %d to add %d\n", neighbour_to_delete,sender_id);
+		neighbour_added = true;
+		//the least recent becomes the next
+		neighbour_to_delete++;
+		if(neighbour_to_delete == MAX_NEIGHBOURS_SAVED){
+			neighbour_to_delete = 0;
+		}
 	}
 
 	if(neighbour_added){
