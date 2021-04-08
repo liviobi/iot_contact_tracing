@@ -1,32 +1,3 @@
-/*
- * Copyright (c) 2014, Texas Instruments Incorporated - http://www.ti.com/
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the copyright holder nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE
- * COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
- * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
- * OF THE POSSIBILITY OF SUCH DAMAGE.
- */
 /*---------------------------------------------------------------------------*/
 /** \addtogroup cc2538-examples
  * @{
@@ -52,13 +23,55 @@
 #include "sys/ctimer.h"
 #include "lib/sensors.h"
 #include "dev/button-sensor.h"
-#include "dev/leds.h"
+
+
+#include "simple-udp.h"
+#include "contiki.h"
+#include "lib/random.h"
+#include "net/ipv6/uip-ds6.h"
 
 #include "sys/log.h"
 #define LOG_MODULE "MQTT-DEMO"
 #define LOG_LEVEL LOG_LEVEL_INFO
 
 #include <string.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <sys/node-id.h>
+
+
+#define UDP_PORT 1234
+
+#define SEND_INTERVAL		(20 * CLOCK_SECOND)
+#define SEND_TIME		(random_rand() % (SEND_INTERVAL))
+#define MAX_NEIGHBOURS_SAVED 16
+#define MAX_EVENT_OF_INTEREST_DELAY 80
+#define MIN_EVENT_OF_INTEREST_DELAY 20
+#define ALERT_ENABLED 0
+
+static struct simple_udp_connection broadcast_connection;
+
+//event that gets posted when there's something to publish
+static process_event_t event_of_interest_event;
+static process_event_t neighbour_added_event;
+
+/*
+When a random event of interest occurs,
+an event gets fired. When that happens, it may occur that the finite state machine
+that implements the mqtt functionalities isn't anymore in the publishing state, 
+therefore the following variable is used to flag  that there's something to publish,
+so when the machine will go back to the publishing state, the update won't be missed
+*/
+static bool event_fired;
+
+typedef struct neighbour_s{
+	int id;
+	bool saved;
+} neighbour;
+
+//Array to save the neighbours encountered, initialized to NULL
+static neighbour* neighbours[MAX_NEIGHBOURS_SAVED] = {NULL};
 
 /*---------------------------------------------------------------------------*/
 /*
@@ -73,13 +86,6 @@ static const char *broker_ip = MQTT_DEMO_BROKER_IP_ADDR;
  * disconnect)
  */
 #define STATE_MACHINE_PERIODIC     (CLOCK_SECOND >> 1)
-/*---------------------------------------------------------------------------*/
-/* Provide visible feedback via LEDS during various states */
-/* When connecting to broker */
-#define CONNECTING_LED_DURATION    (CLOCK_SECOND >> 2)
-
-/* Each time we try to publish */
-#define PUBLISH_LED_ON_DURATION    (CLOCK_SECOND)
 /*---------------------------------------------------------------------------*/
 /* Connections and reconnections */
 #define RETRY_FOREVER              0xFF
@@ -114,7 +120,6 @@ static uint8_t state;
 /*---------------------------------------------------------------------------*/
 /* A timeout used when waiting to connect to a network */
 #define NET_CONNECT_PERIODIC        (CLOCK_SECOND >> 2)
-#define NO_NET_LED_DURATION         (NET_CONNECT_PERIODIC >> 1)
 /*---------------------------------------------------------------------------*/
 /* Default configuration values */
 #define DEFAULT_TYPE_ID             "native"
@@ -125,7 +130,9 @@ static uint8_t state;
 #define DEFAULT_KEEP_ALIVE_TIMER    60
 /*---------------------------------------------------------------------------*/
 PROCESS_NAME(mqtt_demo_process);
-AUTOSTART_PROCESSES(&mqtt_demo_process);
+PROCESS(broadcast_example_process, "UDP broadcast example process");
+PROCESS(event_process, "Random Event Process");
+AUTOSTART_PROCESSES(&mqtt_demo_process,&broadcast_example_process,&event_process);
 /*---------------------------------------------------------------------------*/
 /**
  * \brief Data structure declaration for the MQTT client configuration
@@ -151,7 +158,8 @@ typedef struct mqtt_client_config {
  */
 #define BUFFER_SIZE 64
 static char client_id[BUFFER_SIZE];
-static char pub_topic[BUFFER_SIZE];
+static char pub_topic_neighbours[BUFFER_SIZE];
+static char pub_topic_alerts[BUFFER_SIZE];
 static char sub_topic[BUFFER_SIZE];
 /*---------------------------------------------------------------------------*/
 /*
@@ -198,23 +206,15 @@ ipaddr_sprintf(char *buf, uint8_t buf_len, const uip_ipaddr_t *addr)
 }
 /*---------------------------------------------------------------------------*/
 static void
-publish_led_off(void *d)
-{
-  leds_off(MQTT_DEMO_STATUS_LED);
-}
-/*---------------------------------------------------------------------------*/
-static void
 pub_handler(const char *topic, uint16_t topic_len, const uint8_t *chunk,
             uint16_t chunk_len)
 {
   LOG_INFO("Pub handler: topic='%s' (len=%u), chunk_len=%u\n", topic, topic_len,
       chunk_len);
+	int sender_id = chunk[0] - 48;
+ 	printf("ALERT FROM: %d\n",sender_id);
 
-  /* If the format != json, ignore */
-  if(strncmp(&topic[topic_len - 4], "json", 4) != 0) {
-    LOG_ERR("Incorrect format\n");
-    return;
-  }
+	
 }
 /*---------------------------------------------------------------------------*/
 static void
@@ -237,12 +237,12 @@ mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
   case MQTT_EVENT_PUBLISH: {
     msg_ptr = data;
 
-    if(msg_ptr->first_chunk) {
+    /*if(msg_ptr->first_chunk) {
       msg_ptr->first_chunk = 0;
       LOG_INFO("Application received a publish on topic '%s'; payload "
           "size is %i bytes\n",
           msg_ptr->topic, msg_ptr->payload_length);
-    }
+    }*/
 
     pub_handler(msg_ptr->topic, strlen(msg_ptr->topic), msg_ptr->payload_chunk,
                 msg_ptr->payload_length);
@@ -269,7 +269,7 @@ mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
 static int
 construct_pub_topic(void)
 {
-  int len = snprintf(pub_topic, BUFFER_SIZE, MQTT_DEMO_PUBLISH_TOPIC);
+  int len = snprintf(pub_topic_neighbours, BUFFER_SIZE, MQTT_DEMO_PUBLISH_TOPIC);
 
   /* len < 0: Error. Len >= BUFFER_SIZE: Buffer too small */
   if(len < 0 || len >= BUFFER_SIZE) {
@@ -277,20 +277,21 @@ construct_pub_topic(void)
     return 0;
   }
 
+  len = snprintf(pub_topic_alerts, BUFFER_SIZE, MQTT_DEMO_PUBLISH_TOPIC_ALERT);
+  /* len < 0: Error. Len >= BUFFER_SIZE: Buffer too small */
+  if(len < 0 || len >= BUFFER_SIZE) {
+      LOG_ERR("Pub topic: %d, buffer %d\n", len, BUFFER_SIZE);
+      return 0;
+  }
+
   return 1;
 }
 /*---------------------------------------------------------------------------*/
 static int
 construct_sub_topic(void)
-{
-  int len = snprintf(sub_topic, BUFFER_SIZE, MQTT_DEMO_SUB_TOPIC);
-
-  /* len < 0: Error. Len >= BUFFER_SIZE: Buffer too small */
-  if(len < 0 || len >= BUFFER_SIZE) {
-    LOG_INFO("Sub topic: %d, buffer %d\n", len, BUFFER_SIZE);
-    return 0;
-  }
-
+{	
+  int len = snprintf(sub_topic, BUFFER_SIZE, "lgf/project1/%d",node_id);
+	//printf("Subbing to %s\n", sub_topic);
   return 1;
 }
 /*---------------------------------------------------------------------------*/
@@ -380,42 +381,108 @@ subscribe(void)
   }
 }
 /*---------------------------------------------------------------------------*/
-static int
-get_onboard_temp(void)
-{
-  return NATIVE_TEMPERATURE;
+static bool neighbours_to_publish(){
+    //check if there are new neighbours to publish to the backend
+    int i;
+    for(i = 0; i < MAX_NEIGHBOURS_SAVED && neighbours[i] != NULL; i++ ){
+        if(neighbours[i]->saved == false){
+            break;
+        }
+    }
+    //no new neighbours in the array
+    if (i == MAX_NEIGHBOURS_SAVED || neighbours[i] == NULL){
+        return false;
+    }
+    //there is a new neighbour to add
+    return true;
+
 }
 /*---------------------------------------------------------------------------*/
-static void
-publish(void)
+static void publish_alert(void){
+    int len;
+    int remaining = APP_BUFFER_SIZE;
+
+    buf_ptr = app_buffer;
+
+    len = snprintf(buf_ptr, remaining,
+                   "{"
+                   "\"id\": %d}",
+                   node_id);
+
+    if(len < 0 || len >= remaining) {
+        LOG_ERR("Buffer too short. Have %d, need %d + \\0\n", remaining, len);
+        return;
+    }
+
+    mqtt_publish(&conn, NULL, pub_topic_alerts, (uint8_t *)app_buffer,
+                 strlen(app_buffer), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
+
+    LOG_INFO("Publish for alert sent out!\n");
+    event_fired = false;
+}
+
+/*---------------------------------------------------------------------------*/
+static void publish_neighbours(void)
 {
-  /* Publish MQTT topic */
+    //check if there's something to publish
+    if(!neighbours_to_publish()){
+        //LOG_INFO("No new neighbours to publish\n");
+        return;
+    }
+
+
   int len;
+	//TODO CHECK BUFFER SIZE dimensions
   int remaining = APP_BUFFER_SIZE;
 
   seq_nr_value++;
-
   buf_ptr = app_buffer;
 
   len = snprintf(buf_ptr, remaining,
-                 "{"
-                 "\"d\":{"
-                 "\"myName\":\"%s\","
-                 "\"Seq #\":%d,"
-                 "\"Uptime (sec)\":%lu,"
-                 "\"Temp (C)\":%d",
-                 "native", seq_nr_value,clock_seconds(),get_onboard_temp()); 
+                   "{"
+                   "\"id\": %d,"
+                   "\"Seq #\":%d,"
+                   "\"Uptime (sec)\":%lu,"
+                   "\"neighbours\": [",
+                   node_id, seq_nr_value,clock_seconds());
+
+  if(len < 0 || len >= remaining) {
+      LOG_ERR("Buffer too short. Have %d, need %d + \\0\n", remaining, len);
+      return;
+  }
+  remaining -= len;
+  //??
+  buf_ptr += len;
+	
+	//just because it can't be declared inside the for loop
+	bool firstArrayElemet = true;
+  for(int i = 0; i < MAX_NEIGHBOURS_SAVED && neighbours[i] != NULL; i++){
+        if(neighbours[i]->saved == false){
+            if(firstArrayElemet){
+                len = snprintf(buf_ptr, remaining,"%d",neighbours[i]->id);
+                firstArrayElemet = false;
+            }else{
+                len = snprintf(buf_ptr, remaining,",%d",neighbours[i]->id);
+            }
+            remaining -= len;
+            //??
+            buf_ptr += len;
+            neighbours[i]->saved = true;
+        }
+  }
+
+	len = snprintf(buf_ptr, remaining,"]}");
 
   if(len < 0 || len >= remaining) {
     LOG_ERR("Buffer too short. Have %d, need %d + \\0\n", remaining, len);
     return;
   }
-
-  remaining -= len;
+  
+	/*remaining -= len;
   buf_ptr += len;
 
-  /* Put our Default route's string representation in a buffer */
-  char def_rt_str[64];
+  // Put our Default route's string representation in a buffer
+ 	char def_rt_str[64];
   memset(def_rt_str, 0, sizeof(def_rt_str));
   ipaddr_sprintf(def_rt_str, sizeof(def_rt_str), uip_ds6_defrt_choose());
 
@@ -429,17 +496,18 @@ publish(void)
   remaining -= len;
   buf_ptr += len;
 
-  len = snprintf(buf_ptr, remaining, "}}");
+  len = snprintf(buf_ptr, remaining, "}");
 
   if(len < 0 || len >= remaining) {
     LOG_ERR("Buffer too short. Have %d, need %d + \\0\n", remaining, len);
     return;
-  }
+  }*/
 
-  mqtt_publish(&conn, NULL, pub_topic, (uint8_t *)app_buffer,
+  mqtt_publish(&conn, NULL, pub_topic_neighbours, (uint8_t *)app_buffer,
                strlen(app_buffer), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
 
   LOG_INFO("Publish sent out!\n");
+	neighbour_added == false;
 }
 /*---------------------------------------------------------------------------*/
 static void
@@ -476,18 +544,13 @@ state_machine(void)
       /* Registered and with a global IPv6 address, connect! */
       LOG_INFO("Joined network! Connect attempt %u\n", connect_attempt);
       connect_to_broker();
-    } else {
-      leds_on(MQTT_DEMO_STATUS_LED);
-      ctimer_set(&ct, NO_NET_LED_DURATION, publish_led_off, NULL);
     }
     etimer_set(&publish_periodic_timer, NET_CONNECT_PERIODIC);
     return;
     break;
   case STATE_CONNECTING:
-    leds_on(MQTT_DEMO_STATUS_LED);
-    ctimer_set(&ct, CONNECTING_LED_DURATION, publish_led_off, NULL);
     /* Not connected yet. Wait */
-    LOG_INFO("Connecting: retry %u...\n", connect_attempt);
+    //LOG_INFO("Connecting: retry %u...\n", connect_attempt);
     break;
   case STATE_CONNECTED:
   case STATE_PUBLISHING:
@@ -505,14 +568,19 @@ state_machine(void)
       if(state == STATE_CONNECTED) {
         subscribe();
         state = STATE_PUBLISHING;
+				//I leave it here to be sure that each time the machine passes from
+				//connecting to publishing, the queue of events to be published is red
+				//at least once i.e. be sure to publish after a disconnection
+        etimer_set(&publish_periodic_timer, conf.pub_interval);
       } else {
-        leds_on(MQTT_DEMO_STATUS_LED);
-        ctimer_set(&ct, PUBLISH_LED_ON_DURATION, publish_led_off, NULL);
-        publish();
-      }
-      etimer_set(&publish_periodic_timer, conf.pub_interval);
+          //Publish new neighbours to the specific topic
+          publish_neighbours();
+          //Check if there is an alert to send and possibly send it
+          if(event_fired){
+              publish_alert();
+          }
 
-      LOG_INFO("Publishing\n");
+      }
       /* Return here so we don't end up rescheduling the timer */
       return;
     } else {
@@ -559,7 +627,6 @@ state_machine(void)
     return;
   case STATE_ERROR:
   default:
-    leds_on(MQTT_DEMO_STATUS_LED);
     /*
      * 'default' should never happen
      *
@@ -588,11 +655,124 @@ PROCESS_THREAD(mqtt_demo_process, ev, data)
   while(1) {
 
     PROCESS_YIELD();
-
+    //if a timer elapses and that timer is publish periodic timer, switch state in the machine
     if (ev == PROCESS_EVENT_TIMER && data == &publish_periodic_timer) {
-      state_machine();
+        state_machine();
+    }else if((ev == event_of_interest_event || ev == neighbour_added_event) && state == STATE_PUBLISHING){
+        state_machine();
     }
 
+  }
+
+  PROCESS_END();
+}
+/*---------------------------------------------------------------------------*/
+static  neighbour* create_neighbour(int sender_id){
+	neighbour* new_neighbour = (neighbour*)malloc(sizeof(neighbour));
+	//initialize the new neighbour
+	new_neighbour-> id = sender_id;
+	new_neighbour-> saved = false;
+
+	return  new_neighbour;
+}
+/*---------------------------------------------------------------------------*/
+static void
+receiver(struct simple_udp_connection *c,
+         const uip_ipaddr_t *sender_addr,
+         uint16_t sender_port,
+         const uip_ipaddr_t *receiver_addr,
+         uint16_t receiver_port,
+         const uint8_t *data,
+         uint16_t datalen)
+{
+  int sender_id = atoi((char*)data);
+  //printf("Data received on port %d from port %d sent by %d\n",receiver_port, sender_port, sender_id);
+	int i;
+	bool neighbour_added = false;
+	for(i = 0; i < MAX_NEIGHBOURS_SAVED; i++){
+		if(neighbours[i] == NULL){
+			neighbours[i] = create_neighbour(sender_id);
+			//check if malloc failed
+			if(neighbours[i] == NULL){
+				//TODO log error
+				printf("malloc failed\n");
+			}else{
+				printf("Added new neighbour with id: %d\n", sender_id);
+                neighbour_added = true;
+			}
+			break;
+		}else{
+			//neighbour already seen
+			if(neighbours[i]->id == sender_id){
+				//printf("Already seen neighbour: %d\n", sender_id);
+				break;
+			}
+		}
+	}
+	//array of neighbours is full
+	if(i == MAX_NEIGHBOURS_SAVED){
+		//TODO delete last seen neighbour
+		printf("can't add neighbour: %d array is full\n", sender_id);
+	}
+
+	if(neighbour_added){
+        process_post(&mqtt_demo_process,neighbour_added_event, NULL);
+	}
+}
+/*---------------------------------------------------------------------------*/
+PROCESS_THREAD(broadcast_example_process, ev, data)
+{
+  static struct etimer periodic_timer;
+  static struct etimer send_timer;
+  uip_ipaddr_t addr;
+  static char node_id_str[3];
+ 
+
+  PROCESS_BEGIN();
+
+  neighbour_added_event = process_alloc_event();
+
+  //convert node id from int to string in order to send it 
+  snprintf(node_id_str, 3, "%d", node_id);
+  
+  simple_udp_register(&broadcast_connection, UDP_PORT,
+                      NULL, UDP_PORT,
+                      receiver);
+
+  etimer_set(&periodic_timer, SEND_INTERVAL);
+  while(1) {
+    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
+    etimer_reset(&periodic_timer);
+    etimer_set(&send_timer, SEND_TIME);
+
+    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&send_timer));
+    //printf("Sending broadcast from %s\n",node_id_str);
+    uip_create_linklocal_allnodes_mcast(&addr);
+    simple_udp_sendto(&broadcast_connection, node_id_str, 3, &addr);
+  }
+
+  PROCESS_END();
+}
+/*---------------------------------------------------------------------------*/
+PROCESS_THREAD(event_process, ev, data)
+{
+  
+  static struct etimer event_timer;
+  static int event_timer_interval;
+
+  PROCESS_BEGIN();
+  event_of_interest_event = process_alloc_event();
+  
+  while(1) {
+    event_timer_interval = (rand() % MAX_EVENT_OF_INTEREST_DELAY) + MIN_EVENT_OF_INTEREST_DELAY;
+    etimer_set(&event_timer, CLOCK_SECOND * event_timer_interval);
+    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&event_timer));
+		if(ALERT_ENABLED){
+			printf("EVENT OF INTEREST TRIGGERED\n");
+    	event_fired = true;
+    	process_post(&mqtt_demo_process,event_of_interest_event, NULL);
+    }
+    
   }
 
   PROCESS_END();
