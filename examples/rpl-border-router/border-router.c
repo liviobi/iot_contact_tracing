@@ -9,7 +9,6 @@
 #include "net/rpl/rpl-ns.h"
 #endif /* RPL_WITH_NON_STORING */
 #include "net/netstack.h"
-#include "dev/button-sensor.h"
 #include "dev/slip.h"
 
 #include <stdio.h>
@@ -18,7 +17,7 @@
 #include <ctype.h>
 
 #define DEBUG DEBUG_NONE
-#include "net/ip/uip-debug.h"
+
 
 static uip_ipaddr_t prefix;
 static uint8_t prefix_set;
@@ -86,7 +85,7 @@ PROCESS_THREAD(border_router_process, ev, data)
 
   PROCESS_PAUSE();
 
-  SENSORS_ACTIVATE(button_sensor);
+
 
   //PRINTF("RPL-Border router started\n");
 #if 0
@@ -113,10 +112,6 @@ PROCESS_THREAD(border_router_process, ev, data)
 
   while(1) {
     PROCESS_YIELD();
-    if (ev == sensors_event && data == &button_sensor) {
-      //PRINTF("Initiating global repair\n");
-      rpl_repair_root(RPL_DEFAULT_INSTANCE);
-    }
   }
 
   PROCESS_END();
