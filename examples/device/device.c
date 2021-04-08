@@ -74,9 +74,9 @@ static uint8_t state;
 #define STATE_ERROR        0xFF
 
 PROCESS_NAME(mqtt_device_process);
-PROCESS(broadcast_example_process, "UDP broadcast example process");
+PROCESS(broadcast_process, "UDP broadcast example process");
 PROCESS(event_process, "Random Event Process");
-AUTOSTART_PROCESSES(&mqtt_device_process,&broadcast_example_process,&event_process);
+AUTOSTART_PROCESSES(&mqtt_device_process,&broadcast_process,&event_process);
 /*---------------------------------------------------------------------------*/
 /**
  * \brief Data structure declaration for the MQTT client configuration
@@ -656,7 +656,7 @@ receiver(struct simple_udp_connection *c,
 	}
 }
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(broadcast_example_process, ev, data)
+PROCESS_THREAD(broadcast_process, ev, data)
 {
   static struct etimer periodic_timer;
   static struct etimer send_timer;
