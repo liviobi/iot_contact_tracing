@@ -4,6 +4,9 @@
 /* Enable TCP */
 #define UIP_CONF_TCP 1
 /*---------------------------------------------------------------------------*/
+/* Maximum TCP segment size for outgoing segments of our socket */
+#define MAX_TCP_SEGMENT_SIZE    32
+/*---------------------------------------------------------------------------*/
 #define DEFAULT_ORG_ID              "mqtt-demo"
 /*---------------------------------------------------------------------------*/
 #define LOG_MODULE "MQTT"

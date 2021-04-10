@@ -10,3 +10,5 @@ examples/ipv6/rpl-tsch-copy/
 examples/mqtt-demo/obj_cooja/
 tools/
 *.idea
+
+

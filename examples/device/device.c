@@ -9,7 +9,6 @@
 #include "stdbool.h"
 #include "stdlib.h"
 #include "sys/node-id.h"
-
 //NETWORK
 #include "rpl/rpl-private.h"
 #include "net/rpl/rpl.h"
@@ -23,9 +22,12 @@
 #define UDP_PORT 1234
 #define SEND_INTERVAL		(20 * CLOCK_SECOND)
 #define BROADCAST_SEND_INTERVAL		(random_rand() % (SEND_INTERVAL))
-#define MAX_NEIGHBOURS_SAVED 2
+//maximum number of neighbours that each device can remember,
+//before increment it be sure to check APP_BUFFER_SIZE dimension
+#define MAX_NEIGHBOURS_SAVED 16
 #define MAX_EVENT_OF_INTEREST_DELAY 80
 #define MIN_EVENT_OF_INTEREST_DELAY 20
+//Decide if this node sends alerts
 #define ALERT_ENABLED 0
 
 static struct simple_udp_connection broadcast_connection;
@@ -34,7 +36,6 @@ static struct simple_udp_connection broadcast_connection;
 static process_event_t event_of_interest_event;
 static process_event_t neighbour_added_event;
 static process_event_t disconnection_event;
-
 /*
 When a random event of interest occurs,
 an event gets fired. When that happens, it may occur that the finite state machine
@@ -43,6 +44,7 @@ therefore the following variable is used to flag  that there's something to publ
 so when the machine will go back to the publishing state, the update won't be missed
 */
 static bool event_fired;
+/*---------------------------------------------------------------------------*/
 
 typedef struct neighbour_s{
 	int id;
@@ -55,14 +57,6 @@ static neighbour* neighbours[MAX_NEIGHBOURS_SAVED] = {NULL};
 static int neighbour_to_delete = 0;
 
 /*---------------------------------------------------------------------------*/
-/*
- * Publish to a local MQTT broker (e.g. mosquitto) running on
- * the node that hosts your border router
- */
-static const char *broker_ip = MQTT_BROKER_IP_ADDR;
-static struct timer connection_life;
-static uint8_t connect_attempt;
-/*---------------------------------------------------------------------------*/
 /* Various states */
 static uint8_t state;
 #define STATE_INIT            0
@@ -74,11 +68,14 @@ static uint8_t state;
 #define STATE_NEWCONFIG       6
 #define STATE_CONFIG_ERROR 0xFE
 #define STATE_ERROR        0xFF
-
-PROCESS_NAME(mqtt_device_process);
-PROCESS(broadcast_process, "UDP broadcast example process");
-PROCESS(event_process, "Random Event Process");
-AUTOSTART_PROCESSES(&mqtt_device_process,&broadcast_process,&event_process);
+/*---------------------------------------------------------------------------*/
+/*
+ * Publish to a local MQTT broker (e.g. mosquitto) running on
+ * the node that hosts your border router
+ */
+static const char *broker_ip = MQTT_BROKER_IP_ADDR;
+static struct timer connection_life;
+static uint8_t connect_attempt;
 /*---------------------------------------------------------------------------*/
 /**
  * \brief Data structure declaration for the MQTT client configuration
@@ -92,9 +89,6 @@ typedef struct mqtt_client_config {
   clock_time_t pub_interval;
   uint16_t broker_port;
 } mqtt_client_config_t;
-/*---------------------------------------------------------------------------*/
-/* Maximum TCP segment size for outgoing segments of our socket */
-#define MAX_TCP_SEGMENT_SIZE    32
 /*---------------------------------------------------------------------------*/
 /*
  * Buffers for Client ID and Topic.
@@ -120,9 +114,12 @@ static struct mqtt_message *msg_ptr = 0;
 static struct etimer publish_periodic_timer;
 static char *buf_ptr;
 static uint16_t seq_nr_value = 0;
-/*---------------------------------------------------------------------------*/
 static mqtt_client_config_t conf;
 /*---------------------------------------------------------------------------*/
+PROCESS_NAME(mqtt_device_process);
+PROCESS(broadcast_process, "UDP broadcast example process");
+PROCESS(alert_process, "Random Alert Process");
+AUTOSTART_PROCESSES(&mqtt_device_process,&broadcast_process,&alert_process);
 PROCESS(mqtt_device_process, "MQTT");
 /*---------------------------------------------------------------------------*/
 int
@@ -150,6 +147,7 @@ ipaddr_sprintf(char *buf, uint8_t buf_len, const uip_ipaddr_t *addr)
   return len;
 }
 /*---------------------------------------------------------------------------*/
+//Function called every time something is published to a topic to which the device is subbed to, namely alert topic
 static void
 pub_handler(const char *topic, uint16_t topic_len, const uint8_t *chunk,
             uint16_t chunk_len)
@@ -162,8 +160,8 @@ pub_handler(const char *topic, uint16_t topic_len, const uint8_t *chunk,
 	
 }
 /*---------------------------------------------------------------------------*/
-static void
-mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
+//Funcion that changes the state of the state machine after a mqtt event
+static void mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
 {
   switch(event) {
   case MQTT_EVENT_CONNECTED: {
@@ -194,6 +192,7 @@ mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
     LOG_INFO("Application is unsubscribed to topic successfully\n");
     break;
   }
+  //Only with QoS set to 1, acknowledgment server has received the message
   case MQTT_EVENT_PUBACK: {
     LOG_INFO("Publishing complete\n");
     break;
@@ -204,6 +203,7 @@ mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
   }
 }
 /*---------------------------------------------------------------------------*/
+//Check if topic names fit the buffer
 static int
 construct_pub_topic(void)
 {
@@ -225,6 +225,7 @@ construct_pub_topic(void)
   return 1;
 }
 /*---------------------------------------------------------------------------*/
+//Check if topic names fit the buffer
 static int
 construct_sub_topic(void)
 {	
@@ -251,6 +252,7 @@ construct_client_id(void)
   return 1;
 }
 /*---------------------------------------------------------------------------*/
+//Check if topic names and client id fit the buffer
 static void
 update_config(void)
 {
@@ -319,9 +321,8 @@ subscribe(void)
   }
 }
 /*---------------------------------------------------------------------------*/
+//check if there are new neighbours to publish to the backend
 static bool neighbours_to_publish(){
-    //check if there are new neighbours to publish to the backend
-    int i;
     for(i = 0; i < MAX_NEIGHBOURS_SAVED && neighbours[i] != NULL; i++ ){
         if(neighbours[i]->saved == false){
             break;
@@ -370,7 +371,6 @@ static void publish_neighbours(void)
 
 
   int len;
-	//TODO CHECK BUFFER SIZE dimensions
   int remaining = APP_BUFFER_SIZE;
 
   seq_nr_value++;
@@ -385,11 +385,10 @@ static void publish_neighbours(void)
                    node_id, seq_nr_value,clock_seconds());
 
   if(len < 0 || len >= remaining) {
-      LOG_ERR("Buffer too short. Have %d, need %d + \\0\n", remaining, len);
+      LOG_ERR("Buffer too short, the message doesn't fit. Have %d, need %d + \\0\n", remaining, len);
       return;
   }
   remaining -= len;
-  //??
   buf_ptr += len;
 	
 	//just because it can't be declared inside the for loop
@@ -415,31 +414,6 @@ static void publish_neighbours(void)
     LOG_ERR("Buffer too short. Have %d, need %d + \\0\n", remaining, len);
     return;
   }
-  
-	/*remaining -= len;
-  buf_ptr += len;
-
-  // Put our Default route's string representation in a buffer
- 	char def_rt_str[64];
-  memset(def_rt_str, 0, sizeof(def_rt_str));
-  ipaddr_sprintf(def_rt_str, sizeof(def_rt_str), uip_ds6_defrt_choose());
-
-  len = snprintf(buf_ptr, remaining, ",\"Def Route\":\"%s\"",
-                 def_rt_str);
-
-  if(len < 0 || len >= remaining) {
-    LOG_ERR("Buffer too short. Have %d, need %d + \\0\n", remaining, len);
-    return;
-  }
-  remaining -= len;
-  buf_ptr += len;
-
-  len = snprintf(buf_ptr, remaining, "}");
-
-  if(len < 0 || len >= remaining) {
-    LOG_ERR("Buffer too short. Have %d, need %d + \\0\n", remaining, len);
-    return;
-  }*/
 
   mqtt_publish(&conn, NULL, pub_topic_neighbours, (uint8_t *)app_buffer,
                strlen(app_buffer), MQTT_QOS_LEVEL_1, MQTT_RETAIN_OFF);
@@ -457,6 +431,7 @@ connect_to_broker(void)
   state = STATE_CONNECTING;
 }
 /*---------------------------------------------------------------------------*/
+//State machine that that handles mqtt protocol
 static void
 state_machine(void)
 {
@@ -577,33 +552,7 @@ state_machine(void)
   /* If we didn't return so far, reschedule ourselves */
   etimer_set(&publish_periodic_timer, STATE_MACHINE_PERIODIC);
 }
-/*---------------------------------------------------------------------------*/
-PROCESS_THREAD(mqtt_device_process, ev, data)
-{
 
-  PROCESS_BEGIN();
-	disconnection_event = process_alloc_event();
-
-  LOG_INFO("MQTT Process\n");
-
-  init_config();
-  update_config();
-
-  /* Main loop */
-  while(1) {
-
-    PROCESS_YIELD();
-    //if a timer elapses and that timer is publish periodic timer, switch state in the machine
-    if ((ev == PROCESS_EVENT_TIMER && data == &publish_periodic_timer) || ev ==disconnection_event) {
-        state_machine();
-		//Once the machine is in STATE_PUBLISHING wait for publish event triggering instead of a periodic timer
-    }else if((ev == event_of_interest_event || ev == neighbour_added_event) && state == STATE_PUBLISHING){
-        state_machine();
-    }
-  }
-
-  PROCESS_END();
-}
 /*---------------------------------------------------------------------------*/
 static  neighbour* create_neighbour(int sender_id){
 	neighbour* new_neighbour = (neighbour*)malloc(sizeof(neighbour));
@@ -614,6 +563,7 @@ static  neighbour* create_neighbour(int sender_id){
 	return  new_neighbour;
 }
 /*---------------------------------------------------------------------------*/
+//Function called every time a broadcast message is recived
 static void
 receiver(struct simple_udp_connection *c,
          const uip_ipaddr_t *sender_addr,
@@ -632,7 +582,6 @@ receiver(struct simple_udp_connection *c,
 			neighbours[i] = create_neighbour(sender_id);
 			//check if malloc failed
 			if(neighbours[i] == NULL){
-				//TODO log error
 				printf("malloc failed\n");
 			}else{
 				printf("Added new neighbour with id: %d\n", sender_id);
@@ -660,12 +609,36 @@ receiver(struct simple_udp_connection *c,
 			neighbour_to_delete = 0;
 		}
 	}
-
+    //If a new neighbour is found, trigger the event
 	if(neighbour_added){
         process_post(&mqtt_device_process,neighbour_added_event, NULL);
 	}
 }
 /*---------------------------------------------------------------------------*/
+PROCESS_THREAD(mqtt_device_process, ev, data)
+{
+    PROCESS_BEGIN();
+    disconnection_event = process_alloc_event();
+    init_config();
+    update_config();
+
+    /* Main loop */
+    while(1) {
+
+        PROCESS_YIELD();
+        //if a timer elapses and that timer is publish periodic timer, switch state in the machine
+        if ((ev == PROCESS_EVENT_TIMER && data == &publish_periodic_timer) || ev ==disconnection_event) {
+            state_machine();
+        //Once the machine is in STATE_PUBLISHING wait for publish event triggering instead of a periodic timer
+        }else if((ev == event_of_interest_event || ev == neighbour_added_event) && state == STATE_PUBLISHING){
+            state_machine();
+        }
+    }
+
+    PROCESS_END();
+}
+/*---------------------------------------------------------------------------*/
+//Protothread that sends broadcast messages
 PROCESS_THREAD(broadcast_process, ev, data)
 {
   static struct etimer periodic_timer;
@@ -675,7 +648,7 @@ PROCESS_THREAD(broadcast_process, ev, data)
  
 
   PROCESS_BEGIN();
-
+  //initialize event
   neighbour_added_event = process_alloc_event();
 
   //convert node id from int to string in order to send it 
@@ -700,7 +673,7 @@ PROCESS_THREAD(broadcast_process, ev, data)
   PROCESS_END();
 }
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(event_process, ev, data)
+PROCESS_THREAD(alert_process, ev, data)
 {
   
   static struct etimer event_timer;
