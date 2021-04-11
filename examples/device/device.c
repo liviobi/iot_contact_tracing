@@ -323,6 +323,7 @@ subscribe(void)
 /*---------------------------------------------------------------------------*/
 //check if there are new neighbours to publish to the backend
 static bool neighbours_to_publish(){
+		int i;
     for(i = 0; i < MAX_NEIGHBOURS_SAVED && neighbours[i] != NULL; i++ ){
         if(neighbours[i]->saved == false){
             break;
