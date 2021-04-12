@@ -228,8 +228,8 @@ keepalive_packet_sent(void *ptr, int status, int transmissions)
 #ifdef TSCH_LINK_NEIGHBOR_CALLBACK
   TSCH_LINK_NEIGHBOR_CALLBACK(packetbuf_addr(PACKETBUF_ADDR_RECEIVER), status, transmissions);
 #endif
-  PRINTF("TSCH: KA sent to %u, st %d-%d\n",
-         TSCH_LOG_ID_FROM_LINKADDR(packetbuf_addr(PACKETBUF_ADDR_RECEIVER)), status, transmissions);
+  //PRINTF("TSCH: KA sent to %u, st %d-%d\n",
+        // TSCH_LOG_ID_FROM_LINKADDR(packetbuf_addr(PACKETBUF_ADDR_RECEIVER)), status, transmissions);
   tsch_schedule_keepalive();
 }
 /*---------------------------------------------------------------------------*/
@@ -243,8 +243,8 @@ keepalive_send()
     packetbuf_clear();
     packetbuf_set_addr(PACKETBUF_ADDR_RECEIVER, &n->addr);
     NETSTACK_LLSEC.send(keepalive_packet_sent, NULL);
-    PRINTF("TSCH: sending KA to %u\n",
-           TSCH_LOG_ID_FROM_LINKADDR(&n->addr));
+    //PRINTF("TSCH: sending KA to %u\n",
+           //TSCH_LOG_ID_FROM_LINKADDR(&n->addr));
   }
 }
 /*---------------------------------------------------------------------------*/
@@ -631,7 +631,7 @@ PT_THREAD(tsch_scan(struct pt *pt))
       if(current_channel != scan_channel) {
         NETSTACK_RADIO.set_value(RADIO_PARAM_CHANNEL, scan_channel);
         current_channel = scan_channel;
-        PRINTF("TSCH: scanning on channel %u\n", scan_channel);
+        //PRINTF("TSCH: scanning on channel %u\n", scan_channel);
       }
       current_channel_since = now_time;
     }
@@ -754,9 +754,9 @@ PROCESS_THREAD(tsch_send_eb_process, ev, data)
           packetbuf_set_datalen(eb_len);
           /* Enqueue EB packet */
           if(!(p = tsch_queue_add_packet(&tsch_eb_address, NULL, NULL))) {
-            PRINTF("TSCH:! could not enqueue EB packet\n");
+            //PRINTF("TSCH:! could not enqueue EB packet\n");
           } else {
-            PRINTF("TSCH: enqueue EB packet %u %u\n", eb_len, hdr_len);
+            //PRINTF("TSCH: enqueue EB packet %u %u\n", eb_len, hdr_len);
             p->tsch_sync_ie_offset = tsch_sync_ie_offset;
             p->header_len = hdr_len;
           }
@@ -920,26 +920,26 @@ send_packet(mac_callback_t sent, void *ptr)
 #endif
 
   if((hdr_len = NETSTACK_FRAMER.create()) < 0) {
-    PRINTF("TSCH:! can't send packet due to framer error\n");
+    //PRINTF("TSCH:! can't send packet due to framer error\n");
     ret = MAC_TX_ERR;
   } else {
     struct tsch_packet *p;
     /* Enqueue packet */
     p = tsch_queue_add_packet(addr, sent, ptr);
     if(p == NULL) {
-      PRINTF("TSCH:! can't send packet to %u with seqno %u, queue %u %u\n",
-          TSCH_LOG_ID_FROM_LINKADDR(addr), tsch_packet_seqno,
-          packet_count_before,
-          tsch_queue_packet_count(addr));
+      //PRINTF("TSCH:! can't send packet to %u with seqno %u, queue %u %u\n",
+          //TSCH_LOG_ID_FROM_LINKADDR(addr), tsch_packet_seqno,
+          //packet_count_before,
+         // tsch_queue_packet_count(addr));
       ret = MAC_TX_ERR;
     } else {
       p->header_len = hdr_len;
-      PRINTF("TSCH: send packet to %u with seqno %u, queue %u %u, len %u %u\n",
-             TSCH_LOG_ID_FROM_LINKADDR(addr), tsch_packet_seqno,
-             packet_count_before,
-             tsch_queue_packet_count(addr),
-             p->header_len,
-             queuebuf_datalen(p->qb));
+      //PRINTF("TSCH: send packet to %u with seqno %u, queue %u %u, len %u %u\n",
+            // TSCH_LOG_ID_FROM_LINKADDR(addr), tsch_packet_seqno,
+             //packet_count_before,
+             //tsch_queue_packet_count(addr),
+             //p->header_len,
+             //queuebuf_datalen(p->qb));
       (void)packet_count_before; /* Discard "variable set but unused" warning in case of TSCH_LOG_LEVEL of 0 */
     }
   }
@@ -975,9 +975,9 @@ packet_input(void)
     }
 
     if(!duplicate) {
-      PRINTF("TSCH: received from %u with seqno %u\n",
-             TSCH_LOG_ID_FROM_LINKADDR(packetbuf_addr(PACKETBUF_ADDR_SENDER)),
-             packetbuf_attr(PACKETBUF_ATTR_MAC_SEQNO));
+      //PRINTF("TSCH: received from %u with seqno %u\n",
+             //TSCH_LOG_ID_FROM_LINKADDR(packetbuf_addr(PACKETBUF_ADDR_SENDER)),
+            // packetbuf_attr(PACKETBUF_ATTR_MAC_SEQNO));
       NETSTACK_LLSEC.input();
     }
   }

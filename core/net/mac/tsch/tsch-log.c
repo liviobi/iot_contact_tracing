@@ -79,44 +79,44 @@ tsch_log_process_pending(void)
   int16_t log_index;
   /* Loop on accessing (without removing) a pending input packet */
   if(log_dropped != last_log_dropped) {
-    printf("TSCH:! logs dropped %u\n", log_dropped);
+    //printf("TSCH:! logs dropped %u\n", log_dropped);
     last_log_dropped = log_dropped;
   }
   while((log_index = ringbufindex_peek_get(&log_ringbuf)) != -1) {
     struct tsch_log_t *log = &log_array[log_index];
     if(log->link == NULL) {
-      printf("TSCH: {asn-%x.%lx link-NULL} ", log->asn.ms1b, log->asn.ls4b);
+     // printf("TSCH: {asn-%x.%lx link-NULL} ", log->asn.ms1b, log->asn.ls4b);
     } else {
       struct tsch_slotframe *sf = tsch_schedule_get_slotframe_by_handle(log->link->slotframe_handle);
-      printf("TSCH: {asn-%x.%lx link-%u-%u-%u-%u ch-%u} ",
-             log->asn.ms1b, log->asn.ls4b,
-             log->link->slotframe_handle, sf ? sf->size.val : 0, log->link->timeslot, log->link->channel_offset,
-             tsch_calculate_channel(&log->asn, log->link->channel_offset));
+      //printf("TSCH: {asn-%x.%lx link-%u-%u-%u-%u ch-%u} ",
+             //log->asn.ms1b, log->asn.ls4b,
+            // log->link->slotframe_handle, sf ? sf->size.val : 0, log->link->timeslot, log->link->channel_offset,
+            // tsch_calculate_channel(&log->asn, log->link->channel_offset));
     }
     switch(log->type) {
       case tsch_log_tx:
-        printf("%s-%u-%u %u tx %d, st %d-%d",
-            log->tx.dest == 0 ? "bc" : "uc", log->tx.is_data, log->tx.sec_level,
-                log->tx.datalen,
-                log->tx.dest,
-                log->tx.mac_tx_status, log->tx.num_tx);
+        //printf("%s-%u-%u %u tx %d, st %d-%d",
+            //log->tx.dest == 0 ? "bc" : "uc", log->tx.is_data, log->tx.sec_level,
+                //log->tx.datalen,
+              //  log->tx.dest,
+            //    log->tx.mac_tx_status, log->tx.num_tx);
         if(log->tx.drift_used) {
-          printf(", dr %d", log->tx.drift);
+          //printf(", dr %d", log->tx.drift);
         }
-        printf("\n");
+        //printf("\n");
         break;
       case tsch_log_rx:
-        printf("%s-%u-%u %u rx %d",
-            log->rx.is_unicast == 0 ? "bc" : "uc", log->rx.is_data, log->rx.sec_level,
-                log->rx.datalen,
-                log->rx.src);
+        //printf("%s-%u-%u %u rx %d",
+            //log->rx.is_unicast == 0 ? "bc" : "uc", log->rx.is_data, log->rx.sec_level,
+              //  log->rx.datalen,
+            //    log->rx.src);
         if(log->rx.drift_used) {
-          printf(", dr %d", log->rx.drift);
+          //printf(", dr %d", log->rx.drift);
         }
-        printf(", edr %d\n", (int)log->rx.estimated_drift);
+        //printf(", edr %d\n", (int)log->rx.estimated_drift);
         break;
       case tsch_log_message:
-        printf("%s\n", log->message);
+        //printf("%s\n", log->message);
         break;
     }
     /* Remove input from ringbuf */

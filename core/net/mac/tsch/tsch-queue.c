@@ -196,13 +196,13 @@ tsch_queue_flush_nbr_queue(struct tsch_neighbor *n)
     if(p != NULL) {
       /* Set return status for packet_sent callback */
       p->ret = MAC_TX_ERR;
-      PRINTF("TSCH-queue:! flushing packet\n");
+      //PRINTF("TSCH-queue:! flushing packet\n");
       /* Call packet_sent callback */
       mac_call_sent_callback(p->sent, p->ptr, p->ret, p->transmissions);
       /* Free packet queuebuf */
       tsch_queue_free_packet(p);
     }
-    PRINTF("TSCH-queue: packet is deleted packet=%p\n", p);
+    //PRINTF("TSCH-queue: packet is deleted packet=%p\n", p);
   }
 }
 /*---------------------------------------------------------------------------*/
@@ -254,8 +254,8 @@ tsch_queue_add_packet(const linkaddr_t *addr, mac_callback_t sent, void *ptr)
             /* Add to ringbuf (actual add committed through atomic operation) */
             n->tx_array[put_index] = p;
             ringbufindex_put(&n->tx_ringbuf);
-            PRINTF("TSCH-queue: packet is added put_index=%u, packet=%p\n",
-                   put_index, p);
+            //PRINTF("TSCH-queue: packet is added put_index=%u, packet=%p\n",
+                   //put_index, p);
             return p;
           } else {
             memb_free(&packet_memb, p);
@@ -264,7 +264,7 @@ tsch_queue_add_packet(const linkaddr_t *addr, mac_callback_t sent, void *ptr)
       }
     }
   }
-  PRINTF("TSCH-queue:! add packet failed: %u %p %d %p %p\n", tsch_is_locked(), n, put_index, p, p ? p->qb : NULL);
+  //PRINTF("TSCH-queue:! add packet failed: %u %p %d %p %p\n", tsch_is_locked(), n, put_index, p, p ? p->qb : NULL);
   return 0;
 }
 /*---------------------------------------------------------------------------*/
@@ -291,7 +291,7 @@ tsch_queue_remove_packet_from_queue(struct tsch_neighbor *n)
       /* Get and remove packet from ringbuf (remove committed through an atomic operation */
       int16_t get_index = ringbufindex_get(&n->tx_ringbuf);
       if(get_index != -1) {
-        PRINTF("TSCH-queue: packet is removed, get_index=%u\n", get_index);
+        //PRINTF("TSCH-queue: packet is removed, get_index=%u\n", get_index);
         return n->tx_array[get_index];
       } else {
         return NULL;

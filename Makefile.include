@@ -1,5 +1,5 @@
 # -*- makefile -*-
-TSCH_ENABLED = 0
+TSCH_ENABLED = 1
 
 ifndef CONTIKI
   ${error CONTIKI not defined! You must specify where Contiki resides}
