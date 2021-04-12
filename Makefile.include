@@ -1,4 +1,5 @@
 # -*- makefile -*-
+TSCH_ENABLED = 0
 
 ifndef CONTIKI
   ${error CONTIKI not defined! You must specify where Contiki resides}
@@ -62,6 +63,11 @@ TARGET_UPPERCASE := ${strip ${shell echo $(TARGET) | sed y!$(LOWERCASE)!$(UPPERC
 CFLAGS += -DCONTIKI=1 -DCONTIKI_TARGET_$(TARGET_UPPERCASE)=1
 
 MODULES += core/sys core/dev core/lib
+
+ifeq ($(TSCH_ENABLED),1)
+	MODULES += core/net/mac/tsch
+	CFLAGS += -DTSCH_ENABLED=1
+endif
 
 # Include IPv6, IPv4, and/or Rime
 

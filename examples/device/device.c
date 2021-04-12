@@ -29,7 +29,7 @@
 #define MAX_EVENT_OF_INTEREST_DELAY 80
 #define MIN_EVENT_OF_INTEREST_DELAY 20
 //Decide if this node sends alerts
-#define ALERT_ENABLED 0
+#define ALERT_ENABLED 1
 
 static struct simple_udp_connection broadcast_connection;
 
@@ -668,6 +668,8 @@ PROCESS_THREAD(broadcast_process, ev, data)
  
 
   PROCESS_BEGIN();
+	
+	#if TSCH_ENABLED
   /* 3 possible roles:
    * - role_6ln: simple node, will join any network, secured or not
    * - role_6dr: DAG root, will advertise (unsecured) beacons
@@ -707,7 +709,7 @@ PROCESS_THREAD(broadcast_process, ev, data)
   } else {
     net_init(NULL);
   }
-
+	#endif
 /******************************************************/
   //initialize event
   neighbour_added_event = process_alloc_event();

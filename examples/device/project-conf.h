@@ -54,10 +54,12 @@
 //*---------------------------------------------------------------------------*/
 #define IEEE802154_CONF_DEFAULT_CHANNEL      21
 
+
+
+#if TSCH_ENABLED
 /*******************************************************/
 /********************* Enable TSCH *********************/
 /*******************************************************/
-
 /* Netstack layers */
 #undef NETSTACK_CONF_MAC
 #define NETSTACK_CONF_MAC     tschmac_driver
@@ -182,6 +184,7 @@
 #if CONTIKI_TARGET_COOJA
 #define COOJA_CONF_SIMULATE_TURNAROUND 0
 #endif /* CONTIKI_TARGET_COOJA */
+#endif /*TSCH_ENABLED*/
 //*---------------------------------------------------------------------------*/
 #endif /* PROJECT_CONF_H_ */
 /*---------------------------------------------------------------------------*/

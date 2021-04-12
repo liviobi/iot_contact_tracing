@@ -5,12 +5,13 @@
 #include "net/ipv6/uip-ds6.h"
 #include "net/rpl/rpl.h"
 #include "net/rpl/rpl-private.h"
+#include "sys/node-id.h"
 #if RPL_WITH_NON_STORING
 #include "net/rpl/rpl-ns.h"
 #endif /* RPL_WITH_NON_STORING */
 #include "net/netstack.h"
 #include "dev/slip.h"
-
+#include "net/mac/tsch/tsch.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -69,11 +70,72 @@ set_prefix_64(uip_ipaddr_t *prefix_64)
   }
 }
 /*---------------------------------------------------------------------------*/
+static void
+net_init(uip_ipaddr_t *br_prefix)
+{
+  uip_ipaddr_t global_ipaddr;
+
+  if(br_prefix) { /* We are RPL root. Will be set automatically
+                     as TSCH pan coordinator via the tsch-rpl module */
+    memcpy(&global_ipaddr, br_prefix, 16);
+    uip_ds6_set_addr_iid(&global_ipaddr, &uip_lladdr);
+    uip_ds6_addr_add(&global_ipaddr, 0, ADDR_AUTOCONF);
+    rpl_set_root(RPL_DEFAULT_INSTANCE, &global_ipaddr);
+    rpl_set_prefix(rpl_get_any_dag(), br_prefix, 64);
+    rpl_repair_root(RPL_DEFAULT_INSTANCE);
+  }
+
+  NETSTACK_MAC.on();
+}
+/*---------------------------------------------------------------------------*/
 PROCESS_THREAD(border_router_process, ev, data)
 {
   static struct etimer et;
 
   PROCESS_BEGIN();
+
+	#if TSCH_ENABLED
+  /* 3 possible roles:
+   * - role_6ln: simple node, will join any network, secured or not
+   * - role_6dr: DAG root, will advertise (unsecured) beacons
+   * - role_6dr_sec: DAG root, will advertise secured beacons
+   * */
+  static int is_coordinator = 0;
+  static enum { role_6ln, role_6dr, role_6dr_sec } node_role;
+  node_role = role_6ln;
+
+  int coordinator_candidate = 0;
+
+
+  coordinator_candidate = (node_id == 1);
+
+
+  if(coordinator_candidate) {
+    if(LLSEC802154_ENABLED) {
+      node_role = role_6dr_sec;
+    } else {
+      node_role = role_6dr;
+    }
+  } else {
+    node_role = role_6ln;
+  }
+
+
+  printf("Init: node starting with role %s\n",
+         node_role == role_6ln ? "6ln" : (node_role == role_6dr) ? "6dr" : "6dr-sec");
+
+  tsch_set_pan_secured(LLSEC802154_ENABLED && (node_role == role_6dr_sec));
+  is_coordinator = node_role > role_6ln;
+
+  if(is_coordinator) {
+    uip_ipaddr_t prefix;
+    uip_ip6addr(&prefix, UIP_DS6_DEFAULT_PREFIX, 0, 0, 0, 0, 0, 0, 0);
+    net_init(&prefix);
+  } else {
+    net_init(NULL);
+  }
+	#endif
+/******************************************************/
 
 /* While waiting for the prefix to be sent through the SLIP connection, the future
  * border router can join an existing DAG as a parent or child, or acquire a default
