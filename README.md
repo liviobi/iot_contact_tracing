@@ -31,13 +31,14 @@ per avviare Cooja
 4. Aggiungere 1 mote rpl-border-router
 5. *tasto destro sul mote > Mote tools for Contiki >Serial Socket (SERVER)*
 
-6. Assicurarsi che la porta sia 60001 (lo è sempre se l’id del nodo è 1)
-7. Cliccare start (in Serial Socket (SERVER))
-8. Aprire nuovo terminale ed inserire
+6. Assicurarsi che la porta sia 60001 (lo è sempre se l’id del nodo è 1)<br/>
+![Alt text](imgs/1.png?raw=true "1")
+8. Cliccare start (in Serial Socket (SERVER))
+9. Aprire nuovo terminale ed inserire
 `cd iot_contact_tracing/examples/rpl-border-router/`
 `make TARGET=cooja connect-router-cooja`
 
-9. Verificare che compaia questa scritta verde nella console del serial socket server
-10. Aggiungere i motes di tipo  *device*
-11. Iniziare la simulazione cliccando start
-
+9. Verificare che compaia questa scritta verde nella console del serial socket server<br/>
+![Alt text](imgs/2.png?raw=true "2")
+11. Aggiungere i motes di tipo  *device*
+12. Iniziare la simulazione cliccando start
