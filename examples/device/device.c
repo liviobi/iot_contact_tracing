@@ -26,7 +26,7 @@
 //maximum number of neighbours that each device can remember,
 //before increment it be sure to check APP_BUFFER_SIZE dimension
 #define MAX_NEIGHBOURS_SAVED 16
-#define MAX_EVENT_OF_INTEREST_DELAY 100
+#define MAX_EVENT_OF_INTEREST_DELAY 120
 #define MIN_EVENT_OF_INTEREST_DELAY 30
 //Decide if this node sends alerts
 #define ALERT_ENABLED 1
@@ -36,7 +36,6 @@ static struct simple_udp_connection broadcast_connection;
 //event that gets posted when there's something to publish
 static process_event_t event_of_interest_event;
 static process_event_t neighbour_added_event;
-static process_event_t disconnection_event;
 /*
 When a random event of interest occurs,
 an event gets fired. When that happens, it may occur that the finite state machine
@@ -175,7 +174,6 @@ static void mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data
     LOG_INFO("MQTT Disconnect: reason %u\n", *((mqtt_event_t *)data));
 
     state = STATE_DISCONNECTED;
-		process_post(&mqtt_device_process,disconnection_event, NULL);
     process_poll(&mqtt_device_process);
     break;
   }
@@ -204,7 +202,7 @@ static void mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data
   }
 }
 /*---------------------------------------------------------------------------*/
-//Check if topic names fit the buffer
+//todo Check if topic names fit the buffer
 static int
 construct_pub_topic(void)
 {
@@ -226,7 +224,7 @@ construct_pub_topic(void)
   return 1;
 }
 /*---------------------------------------------------------------------------*/
-//Check if topic names fit the buffer
+//todo Check if topic names fit the buffer
 static int
 construct_sub_topic(void)
 {	
@@ -324,7 +322,11 @@ subscribe(void)
 /*---------------------------------------------------------------------------*/
 //check if there are new neighbours to publish to the backend
 static bool neighbours_to_publish(){
-		int i;
+    int i;
+    //necessary from when the device it's outside the network so even with QoS 1 the messages get lost 
+    /*if(state != STATE_PUBLISHING){
+	return false;
+    }*/
     for(i = 0; i < MAX_NEIGHBOURS_SAVED && neighbours[i] != NULL; i++ ){
         if(neighbours[i]->saved == false){
             break;
@@ -367,7 +369,7 @@ static void publish_neighbours(void)
 {
     //check if there's something to publish
     if(!neighbours_to_publish()){
-        //LOG_INFO("No new neighbours to publish\n");
+        
         return;
     }
 
@@ -377,14 +379,21 @@ static void publish_neighbours(void)
 
   seq_nr_value++;
   buf_ptr = app_buffer;
+  int alert;
+  if(event_fired){
+     alert = node_id;
+     event_fired = false;
+  }else{
+     alert = 0;
+  }
 
   len = snprintf(buf_ptr, remaining,
                    "{"
                    "\"id\": %d,"
-                   "\"Seq #\":%d,"
+                   "\"alert\":%d,"
                    "\"Uptime (sec)\":%lu,"
                    "\"neighbours\": [",
-                   node_id, seq_nr_value,clock_seconds());
+                   node_id, alert,clock_seconds());
 
   if(len < 0 || len >= remaining) {
       LOG_ERR("Buffer too short, the message doesn't fit. Have %d, need %d + \\0\n", remaining, len);
@@ -482,19 +491,16 @@ state_machine(void)
       if(state == STATE_CONNECTED) {
         subscribe();
         state = STATE_PUBLISHING;
-				//I leave it here to be sure that each time the machine passes from
-				//connecting to publishing, the queue of events to be published is red
-				//at least once i.e. be sure to publish after a disconnection
-        etimer_set(&publish_periodic_timer, conf.pub_interval);
       } else {
           //Publish new neighbours to the specific topic
           publish_neighbours();
           //Check if there is an alert to send and possibly send it
           if(event_fired){
-              publish_alert();
+             publish_alert();
           }
 
       }
+      etimer_set(&publish_periodic_timer, conf.pub_interval);
       /* Return here so we don't end up rescheduling the timer */
       return;
     } else {
@@ -638,7 +644,6 @@ receiver(struct simple_udp_connection *c,
 PROCESS_THREAD(mqtt_device_process, ev, data)
 {
     PROCESS_BEGIN();
-    disconnection_event = process_alloc_event();
     init_config();
     update_config();
 
@@ -646,11 +651,8 @@ PROCESS_THREAD(mqtt_device_process, ev, data)
     while(1) {
 
         PROCESS_YIELD();
-        //if a timer elapses and that timer is publish periodic timer, switch state in the machine
-        if ((ev == PROCESS_EVENT_TIMER && data == &publish_periodic_timer) || ev ==disconnection_event) {
-            state_machine();
-        //Once the machine is in STATE_PUBLISHING wait for publish event triggering instead of a periodic timer
-        }else if((ev == event_of_interest_event || ev == neighbour_added_event) && state == STATE_PUBLISHING){
+        //if a timer elapses and that timer is publish periodic timer, switch state in the machine or if you need to publish something
+        if ((ev == PROCESS_EVENT_TIMER && data == &publish_periodic_timer) || ev == event_of_interest_event || ev == neighbour_added_event){
             state_machine();
         }
     }
