@@ -43,6 +43,6 @@ per avviare Cooja
 11. Aggiungere i motes di tipo  *device* andando su *Motes > Add motes > Create new mote type > Cooja mote ..*
 12. Iniziare la simulazione cliccando start
 
-###TSCH:
+### TSCH:
 
 Per abilitare il radio duty cycling settare `TSCH_ENABLED = 1` in *Makefile.include* e ricordarsi di eseguire `make clean`
