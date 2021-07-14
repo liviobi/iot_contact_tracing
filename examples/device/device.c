@@ -26,8 +26,8 @@
 //maximum number of neighbours that each device can remember,
 //before increment it be sure to check APP_BUFFER_SIZE dimension
 #define MAX_NEIGHBOURS_SAVED 16
-#define MAX_EVENT_OF_INTEREST_DELAY 80
-#define MIN_EVENT_OF_INTEREST_DELAY 20
+#define MAX_EVENT_OF_INTEREST_DELAY 100
+#define MIN_EVENT_OF_INTEREST_DELAY 30
 //Decide if this node sends alerts
 #define ALERT_ENABLED 1
 
@@ -156,7 +156,7 @@ pub_handler(const char *topic, uint16_t topic_len, const uint8_t *chunk,
   LOG_INFO("Pub handler: topic='%s' (len=%u), chunk_len=%u\n", topic, topic_len,
       chunk_len);
 	int sender_id = chunk[0] - 48;
- 	printf("ALERT FROM: %d\n",sender_id);
+ 	printf("message - ALERT FROM: %d\n",sender_id);
 
 	
 }
@@ -604,7 +604,7 @@ receiver(struct simple_udp_connection *c,
 			if(neighbours[i] == NULL){
 				printf("malloc failed\n");
 			}else{
-				printf("Added new neighbour with id: %d\n", sender_id);
+				printf("message - Added new neighbour with id: %d\n", sender_id);
         neighbour_added = true;
 			}
 			break;
@@ -750,7 +750,7 @@ PROCESS_THREAD(alert_process, ev, data)
     etimer_set(&event_timer, CLOCK_SECOND * event_timer_interval);
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&event_timer));
 		if(ALERT_ENABLED){
-			printf("EVENT OF INTEREST TRIGGERED\n");
+			printf("message - EVENT OF INTEREST TRIGGERED\n");
     	event_fired = true;
     	process_post(&mqtt_device_process,event_of_interest_event, NULL);
     }

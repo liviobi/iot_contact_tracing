@@ -40,5 +40,9 @@ per avviare Cooja
 
 9. Verificare che compaia questa scritta verde nella console del serial socket server<br/>
 ![Alt text](imgs/2.png?raw=true "2")
-11. Aggiungere i motes di tipo  *device*
+11. Aggiungere i motes di tipo  *device* andando su *Motes > Add motes > Create new mote type > Cooja mote ..*
 12. Iniziare la simulazione cliccando start
+
+###TSCH:
+
+Per abilitare il radio duty cycling settare `TSCH_ENABLED = 1` in *Makefile.include* e ricordarsi di eseguire `make clean`
